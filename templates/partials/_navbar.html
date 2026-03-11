@@ -1,0 +1,38 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{{ url_for('dashboard.dashboard') }}">
+            <i class="bi bi-graph-up-arrow me-2"></i>TradeFlow CRM
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'dashboard.dashboard' %}active{% endif %}"
+                       href="{{ url_for('dashboard.dashboard') }}">
+                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('clients.') %}active{% endif %}"
+                       href="{{ url_for('clients.list_clients') }}">
+                        <i class="bi bi-building me-1"></i>Clients
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('contacts.') %}active{% endif %}"
+                       href="{{ url_for('contacts.list_contacts') }}">
+                        <i class="bi bi-chat-dots me-1"></i>Contacts
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('followups.') %}active{% endif %}"
+                       href="{{ url_for('followups.list_followups') }}">
+                        <i class="bi bi-calendar-check me-1"></i>Follow-ups
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
