@@ -311,6 +311,11 @@
     background-color: #fff3cd;
 }
 
+/* Settings toggle switch */
+.settings-toggle {
+    cursor: pointer;
+}
+
 /* Offcanvas panel — full-width on small screens */
 @media (max-width: 575.98px) {
     #quickAddPanel {

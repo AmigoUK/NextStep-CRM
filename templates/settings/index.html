@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Settings — NextStep CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-gear me-2"></i>Settings</h2>
+</div>
+
+<!-- Quick Functions Card -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-lightning-charge me-1"></i>Quick Functions</h5>
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addQfModal">
+            <i class="bi bi-plus-lg me-1"></i>Add Quick Function
+        </button>
+    </div>
+    <div class="card-body p-0">
+        {% if quick_functions %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Icon</th>
+                        <th>Label</th>
+                        <th>Type</th>
+                        <th>Notes</th>
+                        <th>Outcome</th>
+                        <th>Active</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for qf in quick_functions %}
+                    <tr class="{{ '' if qf.is_active else 'text-muted' }}" id="qf-row-{{ qf.id }}">
+                        <td data-label="Icon"><i class="bi {{ qf.icon }} fs-5"></i></td>
+                        <td data-label="Label">{{ qf.label }}</td>
+                        <td data-label="Type"><span class="badge badge-{{ qf.contact_type }}">{{ qf.contact_type }}</span></td>
+                        <td data-label="Notes">{{ qf.notes }}</td>
+                        <td data-label="Outcome">{{ qf.outcome }}</td>
+                        <td data-label="Active">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input settings-toggle" type="checkbox"
+                                       data-toggle-url="{{ url_for('settings.toggle_quick_function', id=qf.id) }}"
+                                       {{ 'checked' if qf.is_active }}>
+                            </div>
+                        </td>
+                        <td data-label="Actions" class="text-end">
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="modal" data-bs-target="#editQfModal-{{ qf.id }}"
+                                    title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"
+                                    data-item-name="{{ qf.label }}"
+                                    data-delete-url="{{ url_for('settings.delete_quick_function', id=qf.id) }}"
+                                    title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-lightning-charge d-block"></i>
+            <p>No quick functions configured.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Colour Scheme Card -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-palette me-1"></i>Colour Scheme</h5>
+    </div>
+    <div class="card-body text-muted">
+        <i class="bi bi-clock me-1"></i>Coming soon
+    </div>
+</div>
+
+<!-- Add Quick Function Modal -->
+<div class="modal fade" id="addQfModal" tabindex="-1" aria-labelledby="addQfModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('settings.create_quick_function') }}" method="POST">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="addQfModalLabel">
+                        <i class="bi bi-plus-lg me-1"></i>Add Quick Function
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="add-label" class="form-label">Label <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="add-label" name="label" required maxlength="100">
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-icon" class="form-label">Icon</label>
+                        <div class="input-group">
+                            <span class="input-group-text">bi-</span>
+                            <input type="text" class="form-control" id="add-icon" name="icon" value="lightning-charge"
+                                   placeholder="lightning-charge" maxlength="50">
+                        </div>
+                        <small class="text-muted">Bootstrap Icon name without the <code>bi-</code> prefix</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-type" class="form-label">Type</label>
+                        <select class="form-select" id="add-type" name="contact_type">
+                            {% for ct in contact_types %}
+                            <option value="{{ ct }}">{{ ct|capitalize }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-notes" class="form-label">Notes</label>
+                        <input type="text" class="form-control" id="add-notes" name="notes" maxlength="200">
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-outcome" class="form-label">Outcome</label>
+                        <input type="text" class="form-control" id="add-outcome" name="outcome" maxlength="200">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>Add
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Quick Function Modals (one per row) -->
+{% for qf in quick_functions %}
+<div class="modal fade" id="editQfModal-{{ qf.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('settings.edit_quick_function', id=qf.id) }}" method="POST">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil me-1"></i>Edit Quick Function
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-label-{{ qf.id }}" class="form-label">Label <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit-label-{{ qf.id }}" name="label"
+                               value="{{ qf.label }}" required maxlength="100">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-icon-{{ qf.id }}" class="form-label">Icon</label>
+                        <div class="input-group">
+                            <span class="input-group-text">bi-</span>
+                            <input type="text" class="form-control" id="edit-icon-{{ qf.id }}" name="icon"
+                                   value="{{ qf.icon[3:] if qf.icon.startswith('bi-') else qf.icon }}" maxlength="50">
+                        </div>
+                        <small class="text-muted">Bootstrap Icon name without the <code>bi-</code> prefix</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-type-{{ qf.id }}" class="form-label">Type</label>
+                        <select class="form-select" id="edit-type-{{ qf.id }}" name="contact_type">
+                            {% for ct in contact_types %}
+                            <option value="{{ ct }}" {{ 'selected' if ct == qf.contact_type }}>{{ ct|capitalize }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-notes-{{ qf.id }}" class="form-label">Notes</label>
+                        <input type="text" class="form-control" id="edit-notes-{{ qf.id }}" name="notes"
+                               value="{{ qf.notes }}" maxlength="200">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-outcome-{{ qf.id }}" class="form-label">Outcome</label>
+                        <input type="text" class="form-control" id="edit-outcome-{{ qf.id }}" name="outcome"
+                               value="{{ qf.outcome }}" maxlength="200">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* Toggle switch AJAX handler */
+document.querySelectorAll(".settings-toggle").forEach(function (toggle) {
+    toggle.addEventListener("change", function () {
+        var url = this.getAttribute("data-toggle-url");
+        var row = this.closest("tr");
+
+        fetch(url, {
+            method: "POST",
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(function (resp) { return resp.json(); })
+        .then(function (data) {
+            if (data.ok) {
+                if (data.is_active) {
+                    row.classList.remove("text-muted");
+                } else {
+                    row.classList.add("text-muted");
+                }
+                window.showToast(data.message, "success");
+            }
+        })
+        .catch(function () {
+            toggle.checked = !toggle.checked;
+            window.showToast("Failed to update. Please try again.", "danger");
+        });
+    });
+});
+</script>
+{% endblock %}

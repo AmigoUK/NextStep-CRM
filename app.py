@@ -5,7 +5,7 @@ from flask import Flask
 from config import Config
 from extensions import db
 
-APP_VERSION = "0.9.0-beta"
+APP_VERSION = "0.10.0-beta"
 
 
 def relative_date(d):
@@ -62,15 +62,24 @@ def create_app():
     from blueprints.clients import clients_bp
     from blueprints.contacts import contacts_bp
     from blueprints.followups import followups_bp
+    from blueprints.settings import settings_bp
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(clients_bp, url_prefix="/clients")
     app.register_blueprint(contacts_bp, url_prefix="/contacts")
     app.register_blueprint(followups_bp, url_prefix="/followups")
+    app.register_blueprint(settings_bp, url_prefix="/settings")
 
     with app.app_context():
-        from models import Client, Contact, FollowUp  # noqa: F401
+        from models import Client, Contact, FollowUp, QuickFunction, DEFAULT_QUICK_FUNCTIONS, AppSettings  # noqa: F401
         db.create_all()
+
+        # Seed default quick functions if table is empty
+        if QuickFunction.query.count() == 0:
+            for i, qf_data in enumerate(DEFAULT_QUICK_FUNCTIONS):
+                qf = QuickFunction(sort_order=i, **qf_data)
+                db.session.add(qf)
+            db.session.commit()
 
     return app
 

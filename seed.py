@@ -4,7 +4,7 @@ from datetime import date, time, timedelta
 
 from app import create_app
 from extensions import db
-from models import Client, Contact, FollowUp
+from models import Client, Contact, FollowUp, QuickFunction, DEFAULT_QUICK_FUNCTIONS
 
 
 def seed():
@@ -14,7 +14,13 @@ def seed():
         FollowUp.query.delete()
         Contact.query.delete()
         Client.query.delete()
+        QuickFunction.query.delete()
         db.session.commit()
+
+        # --- Quick Functions ---
+        for i, qf_data in enumerate(DEFAULT_QUICK_FUNCTIONS):
+            db.session.add(QuickFunction(sort_order=i, **qf_data))
+        db.session.flush()
 
         # --- Clients ---
         clients = [

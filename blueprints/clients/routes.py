@@ -5,7 +5,7 @@ from sqlalchemy import func
 
 from blueprints.clients import clients_bp
 from extensions import db
-from models import Client, CLIENT_STATUSES, Contact, FollowUp, QUICK_FUNCTIONS
+from models import Client, CLIENT_STATUSES, Contact, FollowUp, QuickFunction
 
 
 def _is_ajax():
@@ -62,6 +62,10 @@ def list_clients():
         client.next_followup = next_followup
         clients.append(client)
 
+    active_qfs = QuickFunction.query.filter_by(is_active=True).order_by(
+        QuickFunction.sort_order
+    ).all()
+
     return render_template(
         "clients/list.html",
         clients=clients,
@@ -69,7 +73,7 @@ def list_clients():
         q=q,
         status=status,
         view=view,
-        quick_functions=QUICK_FUNCTIONS,
+        quick_functions=[qf.to_dict() for qf in active_qfs],
     )
 
 
@@ -188,7 +192,9 @@ def detail_client(id):
         total_followups=total_followups,
         pending_followups=pending_followups,
         completion_rate=completion_rate,
-        quick_functions=QUICK_FUNCTIONS,
+        quick_functions=[qf.to_dict() for qf in QuickFunction.query.filter_by(
+            is_active=True
+        ).order_by(QuickFunction.sort_order).all()],
     )
 
 
@@ -238,9 +244,13 @@ def update_status(id):
 @clients_bp.route("/<int:id>/quick-action", methods=["POST"])
 def quick_action(id):
     client = db.get_or_404(Client, id)
-    action_id = request.form.get("action_id", "").strip()
 
-    qf = next((q for q in QUICK_FUNCTIONS if q["id"] == action_id), None)
+    try:
+        action_id = int(request.form.get("action_id", "0"))
+    except (ValueError, TypeError):
+        action_id = 0
+
+    qf = db.session.get(QuickFunction, action_id)
     if not qf:
         if _is_ajax():
             return jsonify({"ok": False, "error": "Invalid quick function."}), 400
@@ -251,14 +261,14 @@ def quick_action(id):
         client_id=client.id,
         date=date.today(),
         time=datetime.now().time().replace(microsecond=0),
-        contact_type=qf["contact_type"],
-        notes=qf["notes"],
-        outcome=qf["outcome"],
+        contact_type=qf.contact_type,
+        notes=qf.notes,
+        outcome=qf.outcome,
     )
     db.session.add(contact)
     db.session.commit()
 
-    message = f'"{qf["label"]}" logged for {client.company_name}.'
+    message = f'"{qf.label}" logged for {client.company_name}.'
     if _is_ajax():
         return jsonify({"ok": True, "message": message})
 
