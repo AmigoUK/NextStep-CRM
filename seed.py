@@ -105,7 +105,7 @@ def seed():
             Client(
                 company_name="Greenfield Organics",
                 industry="Agriculture",
-                phone="01onal 496 0258",
+                phone="0115 496 0258",
                 email="farm@greenfieldorganics.co.uk",
                 contact_person="Tom Greenfield",
                 status="active",
