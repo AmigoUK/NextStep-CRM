@@ -7,6 +7,10 @@ from extensions import db
 from models import Client, FollowUp, PRIORITIES
 
 
+def _is_ajax():
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
 @followups_bp.route("/")
 def list_followups():
     priority = request.args.get("priority", "").strip()
@@ -46,6 +50,18 @@ def create_followup():
         priority = request.form.get("priority", "medium")
 
         if not client_id:
+            if _is_ajax():
+                clients = Client.query.order_by(Client.company_name).all()
+                html = render_template(
+                    "followups/_form_fields.html",
+                    followup=None,
+                    clients=clients,
+                    priorities=PRIORITIES,
+                    selected_client_id=None,
+                    today=date.today().isoformat(),
+                    panel_mode=True,
+                )
+                return jsonify({"ok": False, "html": html})
             flash("Please select a client.", "danger")
             return redirect(url_for("followups.create_followup"))
 
@@ -71,11 +87,31 @@ def create_followup():
         )
         db.session.add(followup)
         db.session.commit()
+
+        if _is_ajax():
+            return jsonify({
+                "ok": True,
+                "message": "Follow-up created successfully.",
+                "redirect": url_for("clients.detail_client", id=followup.client_id),
+            })
+
         flash("Follow-up created successfully.", "success")
         return redirect(url_for("clients.detail_client", id=followup.client_id))
 
     client_id = request.args.get("client_id")
     clients = Client.query.order_by(Client.company_name).all()
+
+    if _is_ajax():
+        return render_template(
+            "followups/_form_fields.html",
+            followup=None,
+            clients=clients,
+            priorities=PRIORITIES,
+            selected_client_id=int(client_id) if client_id else None,
+            today=date.today().isoformat(),
+            panel_mode=True,
+        )
+
     return render_template(
         "followups/form.html",
         followup=None,

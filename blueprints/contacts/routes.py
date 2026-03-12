@@ -1,10 +1,14 @@
 from datetime import date, datetime
 
-from flask import flash, redirect, render_template, request, url_for
+from flask import flash, jsonify, redirect, render_template, request, url_for
 
 from blueprints.contacts import contacts_bp
 from extensions import db
 from models import Client, Contact, CONTACT_TYPES
+
+
+def _is_ajax():
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
 
 @contacts_bp.route("/")
@@ -47,6 +51,19 @@ def create_contact():
         contact_type = request.form.get("contact_type", "phone")
 
         if not client_id:
+            if _is_ajax():
+                clients = Client.query.order_by(Client.company_name).all()
+                html = render_template(
+                    "contacts/_form_fields.html",
+                    contact=None,
+                    clients=clients,
+                    contact_types=CONTACT_TYPES,
+                    selected_client_id=None,
+                    today=date.today().isoformat(),
+                    prefill_notes="",
+                    panel_mode=True,
+                )
+                return jsonify({"ok": False, "html": html})
             flash("Please select a client.", "danger")
             return redirect(url_for("contacts.create_contact"))
 
@@ -73,6 +90,14 @@ def create_contact():
         )
         db.session.add(contact)
         db.session.commit()
+
+        if _is_ajax():
+            return jsonify({
+                "ok": True,
+                "message": "Interaction logged successfully.",
+                "redirect": url_for("clients.detail_client", id=contact.client_id),
+            })
+
         flash("Interaction logged successfully.", "success")
         return redirect(url_for("clients.detail_client", id=contact.client_id))
 
@@ -80,6 +105,19 @@ def create_contact():
     prefill_notes = request.args.get("notes", "")
     prefill_date = request.args.get("date", date.today().isoformat())
     clients = Client.query.order_by(Client.company_name).all()
+
+    if _is_ajax():
+        return render_template(
+            "contacts/_form_fields.html",
+            contact=None,
+            clients=clients,
+            contact_types=CONTACT_TYPES,
+            selected_client_id=int(client_id) if client_id else None,
+            today=prefill_date,
+            prefill_notes=prefill_notes,
+            panel_mode=True,
+        )
+
     return render_template(
         "contacts/form.html",
         contact=None,

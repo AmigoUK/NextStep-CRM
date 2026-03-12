@@ -22,8 +22,24 @@
 
     <footer class="text-center text-muted py-3"><small>NextStep CRM v{{ app_version }}</small></footer>
 
+    <!-- Quick Add slide-over panel -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="quickAddPanel" style="width: 480px;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="quickAddPanelTitle">Quick Add</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body" id="quickAddPanelBody">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/panel.js') }}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

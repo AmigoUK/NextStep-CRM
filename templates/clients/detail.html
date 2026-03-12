@@ -104,10 +104,14 @@
 
             <!-- Quick-add buttons -->
             <div class="d-grid gap-2">
-                <a href="{{ url_for('contacts.create_contact', client_id=client.id) }}" class="btn btn-sm btn-outline-primary">
+                <a href="{{ url_for('contacts.create_contact', client_id=client.id) }}" class="btn btn-sm btn-outline-primary"
+                   data-panel-url="{{ url_for('contacts.create_contact', client_id=client.id) }}"
+                   data-panel-title="Log Interaction">
                     <i class="bi bi-chat-dots me-1"></i>Log Interaction
                 </a>
-                <a href="{{ url_for('followups.create_followup', client_id=client.id) }}" class="btn btn-sm btn-outline-primary">
+                <a href="{{ url_for('followups.create_followup', client_id=client.id) }}" class="btn btn-sm btn-outline-primary"
+                   data-panel-url="{{ url_for('followups.create_followup', client_id=client.id) }}"
+                   data-panel-title="Add Follow-up">
                     <i class="bi bi-calendar-check me-1"></i>Add Follow-up
                 </a>
             </div>

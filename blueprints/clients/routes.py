@@ -6,6 +6,10 @@ from extensions import db
 from models import Client, CLIENT_STATUSES, Contact, FollowUp
 
 
+def _is_ajax():
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
 @clients_bp.route("/")
 def list_clients():
     q = request.args.get("q", "").strip()
@@ -71,6 +75,14 @@ def create_client():
     if request.method == "POST":
         company_name = request.form.get("company_name", "").strip()
         if not company_name:
+            if _is_ajax():
+                html = render_template(
+                    "clients/_form_fields.html",
+                    client=None,
+                    statuses=CLIENT_STATUSES,
+                    panel_mode=True,
+                )
+                return jsonify({"ok": False, "html": html})
             flash("Company name is required.", "danger")
             return render_template(
                 "clients/form.html",
@@ -88,8 +100,24 @@ def create_client():
         )
         db.session.add(client)
         db.session.commit()
+
+        if _is_ajax():
+            return jsonify({
+                "ok": True,
+                "message": f"Client '{client.company_name}' created successfully.",
+                "redirect": url_for("clients.detail_client", id=client.id),
+            })
+
         flash(f"Client '{client.company_name}' created successfully.", "success")
         return redirect(url_for("clients.detail_client", id=client.id))
+
+    if _is_ajax():
+        return render_template(
+            "clients/_form_fields.html",
+            client=None,
+            statuses=CLIENT_STATUSES,
+            panel_mode=True,
+        )
 
     return render_template(
         "clients/form.html",
