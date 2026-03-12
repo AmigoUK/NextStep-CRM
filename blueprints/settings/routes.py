@@ -1,8 +1,10 @@
+import re
+
 from flask import flash, jsonify, redirect, render_template, request, url_for
 
 from blueprints.settings import settings_bp
 from extensions import db
-from models import QuickFunction, CONTACT_TYPES, AppSettings
+from models import QuickFunction, AppSettings, InteractionType, Contact
 
 
 def _is_ajax():
@@ -14,14 +16,19 @@ def settings_page():
     quick_functions = QuickFunction.query.order_by(
         QuickFunction.sort_order, QuickFunction.id
     ).all()
+    interaction_types = InteractionType.query.order_by(
+        InteractionType.sort_order, InteractionType.id
+    ).all()
     settings = AppSettings.get()
     return render_template(
         "settings/index.html",
         quick_functions=quick_functions,
-        contact_types=CONTACT_TYPES,
+        interaction_types=interaction_types,
         settings=settings,
     )
 
+
+# ── Quick Functions ──────────────────────────────────────────────
 
 @settings_bp.route("/quick-functions/new", methods=["POST"])
 def create_quick_function():
@@ -96,6 +103,112 @@ def delete_quick_function(id):
     flash(f"Quick function '{label}' deleted.", "success")
     return redirect(url_for("settings.settings_page"))
 
+
+# ── Interaction Types ────────────────────────────────────────────
+
+def _validate_colour(colour):
+    return bool(re.match(r"^#[0-9a-fA-F]{6}$", colour))
+
+
+@settings_bp.route("/interaction-types/new", methods=["POST"])
+def create_interaction_type():
+    label = request.form.get("label", "").strip().lower()
+    if not label:
+        flash("Label is required.", "danger")
+        return redirect(url_for("settings.settings_page"))
+
+    if InteractionType.query.filter_by(label=label).first():
+        flash(f"Interaction type '{label}' already exists.", "danger")
+        return redirect(url_for("settings.settings_page"))
+
+    icon = request.form.get("icon", "bi-chat-dots").strip()
+    if not icon.startswith("bi-"):
+        icon = "bi-" + icon
+
+    colour = request.form.get("colour", "#0d6efd").strip()
+    if not _validate_colour(colour):
+        colour = "#0d6efd"
+
+    max_order = db.session.query(db.func.max(InteractionType.sort_order)).scalar() or 0
+
+    it = InteractionType(
+        label=label,
+        icon=icon,
+        colour=colour,
+        sort_order=max_order + 1,
+    )
+    db.session.add(it)
+    db.session.commit()
+    flash(f"Interaction type '{it.label}' created.", "success")
+    return redirect(url_for("settings.settings_page"))
+
+
+@settings_bp.route("/interaction-types/<int:id>/edit", methods=["POST"])
+def edit_interaction_type(id):
+    it = db.get_or_404(InteractionType, id)
+
+    label = request.form.get("label", "").strip().lower()
+    if not label:
+        flash("Label is required.", "danger")
+        return redirect(url_for("settings.settings_page"))
+
+    # Check uniqueness if label changed
+    if label != it.label:
+        existing = InteractionType.query.filter_by(label=label).first()
+        if existing:
+            flash(f"Interaction type '{label}' already exists.", "danger")
+            return redirect(url_for("settings.settings_page"))
+        # Update any existing contacts using the old label
+        Contact.query.filter_by(contact_type=it.label).update({"contact_type": label})
+
+    icon = request.form.get("icon", it.icon).strip()
+    if not icon.startswith("bi-"):
+        icon = "bi-" + icon
+
+    colour = request.form.get("colour", it.colour).strip()
+    if not _validate_colour(colour):
+        colour = it.colour
+
+    it.label = label
+    it.icon = icon
+    it.colour = colour
+    db.session.commit()
+    flash(f"Interaction type '{it.label}' updated.", "success")
+    return redirect(url_for("settings.settings_page"))
+
+
+@settings_bp.route("/interaction-types/<int:id>/toggle", methods=["POST"])
+def toggle_interaction_type(id):
+    it = db.get_or_404(InteractionType, id)
+    it.is_active = not it.is_active
+    db.session.commit()
+
+    state = "activated" if it.is_active else "deactivated"
+    if _is_ajax():
+        return jsonify({"ok": True, "is_active": it.is_active, "message": f"'{it.label}' {state}."})
+
+    flash(f"'{it.label}' {state}.", "success")
+    return redirect(url_for("settings.settings_page"))
+
+
+@settings_bp.route("/interaction-types/<int:id>/delete", methods=["POST"])
+def delete_interaction_type(id):
+    it = db.get_or_404(InteractionType, id)
+
+    # Refuse deletion if any contacts use this type
+    in_use = Contact.query.filter_by(contact_type=it.label).first()
+    if in_use:
+        flash(f"Cannot delete '{it.label}' — it is used by existing interactions. Deactivate it instead.", "danger")
+        return redirect(url_for("settings.settings_page"))
+
+    label = it.label
+    db.session.delete(it)
+    db.session.commit()
+    flash(f"Interaction type '{label}' deleted.", "success")
+    return redirect(url_for("settings.settings_page"))
+
+
+# ── Theme ────────────────────────────────────────────────────────
 
 @settings_bp.route("/theme", methods=["POST"])
 def update_theme():

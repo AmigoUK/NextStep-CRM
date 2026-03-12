@@ -4,7 +4,7 @@ from flask import flash, jsonify, redirect, render_template, request, url_for
 
 from blueprints.contacts import contacts_bp
 from extensions import db
-from models import Client, Contact, CONTACT_TYPES
+from models import Client, Contact, InteractionType
 
 
 def _is_ajax():
@@ -36,7 +36,7 @@ def list_contacts():
     return render_template(
         "contacts/list.html",
         contacts=contacts,
-        contact_types=CONTACT_TYPES,
+        contact_types=[t.label for t in InteractionType.query.filter_by(is_active=True).order_by(InteractionType.sort_order).all()],
         selected_type=contact_type,
         date_from=date_from,
         date_to=date_to,
@@ -57,7 +57,7 @@ def create_contact():
                     "contacts/_form_fields.html",
                     contact=None,
                     clients=clients,
-                    contact_types=CONTACT_TYPES,
+                    contact_types=[t.label for t in InteractionType.query.filter_by(is_active=True).order_by(InteractionType.sort_order).all()],
                     selected_client_id=None,
                     today=date.today().isoformat(),
                     prefill_notes="",
@@ -111,7 +111,7 @@ def create_contact():
             "contacts/_form_fields.html",
             contact=None,
             clients=clients,
-            contact_types=CONTACT_TYPES,
+            contact_types=[t.label for t in InteractionType.query.filter_by(is_active=True).order_by(InteractionType.sort_order).all()],
             selected_client_id=int(client_id) if client_id else None,
             today=prefill_date,
             prefill_notes=prefill_notes,
@@ -122,7 +122,7 @@ def create_contact():
         "contacts/form.html",
         contact=None,
         clients=clients,
-        contact_types=CONTACT_TYPES,
+        contact_types=[t.label for t in InteractionType.query.filter_by(is_active=True).order_by(InteractionType.sort_order).all()],
         selected_client_id=int(client_id) if client_id else None,
         today=prefill_date,
         prefill_notes=prefill_notes,
@@ -144,7 +144,7 @@ def edit_contact(id):
                 "contacts/form.html",
                 contact=contact,
                 clients=clients,
-                contact_types=CONTACT_TYPES,
+                contact_types=[t.label for t in InteractionType.query.filter_by(is_active=True).order_by(InteractionType.sort_order).all()],
                 selected_client_id=contact.client_id,
                 today=date.today().isoformat(),
             )
@@ -176,7 +176,7 @@ def edit_contact(id):
         "contacts/form.html",
         contact=contact,
         clients=clients,
-        contact_types=CONTACT_TYPES,
+        contact_types=[t.label for t in InteractionType.query.filter_by(is_active=True).order_by(InteractionType.sort_order).all()],
         selected_client_id=contact.client_id,
         today=date.today().isoformat(),
     )

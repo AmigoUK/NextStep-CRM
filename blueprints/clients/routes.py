@@ -5,7 +5,7 @@ from sqlalchemy import func
 
 from blueprints.clients import clients_bp
 from extensions import db
-from models import Client, CLIENT_STATUSES, Contact, FollowUp, QuickFunction
+from models import Client, CLIENT_STATUSES, Contact, FollowUp, QuickFunction, InteractionType
 
 
 def _is_ajax():
@@ -138,14 +138,17 @@ def detail_client(id):
     client = db.get_or_404(Client, id)
 
     # Build unified timeline merging contacts + follow-ups
+    types_map = {t.label: {"icon": t.icon, "colour": t.colour} for t in InteractionType.query.all()}
     timeline = []
     for c in client.contacts:
+        type_info = types_map.get(c.contact_type, {})
         timeline.append({
             "type": "contact",
             "date": c.date,
             "time": c.time,
-            "icon": "bi-chat-dots",
+            "icon": type_info.get("icon", "bi-chat-dots"),
             "badge_class": f"badge-{c.contact_type}",
+            "badge_colour": type_info.get("colour", "#6c757d"),
             "badge_text": c.contact_type.capitalize(),
             "notes": c.notes,
             "outcome": c.outcome,

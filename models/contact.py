@@ -2,8 +2,6 @@ from datetime import datetime, date
 
 from extensions import db
 
-CONTACT_TYPES = ["phone", "email", "meeting"]
-
 
 class Contact(db.Model):
     __tablename__ = "contacts"

@@ -6,7 +6,7 @@ from collections import defaultdict
 
 from blueprints.dashboard import dashboard_bp
 from extensions import db
-from models import Client, Contact, FollowUp
+from models import Client, Contact, FollowUp, InteractionType
 
 
 @dashboard_bp.route("/")
@@ -101,7 +101,7 @@ def api_events():
         })
 
     # Contacts — colour by type
-    type_colours = {"phone": "#0d6efd", "email": "#6f42c1", "meeting": "#fd7e14"}
+    type_colours = {t.label: t.colour for t in InteractionType.query.all()}
     contacts = Contact.query.filter(
         Contact.date >= start_date,
         Contact.date <= end_date,
@@ -241,6 +241,10 @@ def api_quarterly_data():
         FollowUp.due_date <= date(year, 12, 31),
     ).all()
 
+    # Build dynamic type breakdown keys from all interaction types
+    all_interaction_types = InteractionType.query.all()
+    type_colours_map = {t.label: t.colour for t in all_interaction_types}
+
     max_monthly_activity = 0
     quarters = {}
 
@@ -251,11 +255,13 @@ def api_quarterly_data():
         q_contacts = [c for c in all_contacts if q_start <= c.date <= q_end]
         q_followups = [f for f in all_followups if q_start <= f.due_date <= q_end]
 
-        # Type breakdown
-        type_breakdown = {"phone": 0, "email": 0, "meeting": 0}
+        # Type breakdown — dynamic from DB
+        type_breakdown = {t.label: 0 for t in all_interaction_types}
         for c in q_contacts:
             if c.contact_type in type_breakdown:
                 type_breakdown[c.contact_type] += 1
+            else:
+                type_breakdown[c.contact_type] = 1
 
         # Priority breakdown
         priority_breakdown = {"high": 0, "medium": 0, "low": 0}
@@ -318,4 +324,5 @@ def api_quarterly_data():
         "current_quarter": current_quarter,
         "max_monthly_activity": max_monthly_activity or 1,
         "quarters": quarters,
+        "type_colours": type_colours_map,
     })

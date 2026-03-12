@@ -173,7 +173,7 @@
                                 {{ contact.client.company_name }}
                             </a>
                         </td>
-                        <td><span class="badge badge-{{ contact.contact_type }}">{{ contact.contact_type|capitalize }}</span></td>
+                        <td><span class="badge" style="background-color: {{ interaction_types_map.get(contact.contact_type, {}).colour|default('#6c757d') }}">{{ contact.contact_type|capitalize }}</span></td>
                         <td>{{ contact.notes[:50] }}{% if contact.notes|length > 50 %}...{% endif %}</td>
                         <td>{{ contact.outcome or '—' }}</td>
                     </tr>

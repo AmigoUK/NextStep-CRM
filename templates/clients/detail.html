@@ -153,7 +153,7 @@
                 <div class="timeline-content">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <span class="badge {{ item.badge_class }} me-1">{{ item.badge_text }}</span>
+                            <span class="badge me-1" style="background-color: {{ item.badge_colour|default(interaction_types_map.get(item.badge_text|lower, {}).colour|default('#6c757d')) }}">{{ item.badge_text }}</span>
                             <small class="text-muted">{{ item.date|relative_date }}</small>
                             {% if item.time %}
                                 <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ item.time.strftime('%H:%M') }}</small>

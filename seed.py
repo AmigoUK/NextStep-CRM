@@ -4,7 +4,7 @@ from datetime import date, time, timedelta
 
 from app import create_app
 from extensions import db
-from models import Client, Contact, FollowUp, QuickFunction, DEFAULT_QUICK_FUNCTIONS
+from models import Client, Contact, FollowUp, QuickFunction, DEFAULT_QUICK_FUNCTIONS, InteractionType, DEFAULT_INTERACTION_TYPES
 
 
 def seed():
@@ -15,7 +15,13 @@ def seed():
         Contact.query.delete()
         Client.query.delete()
         QuickFunction.query.delete()
+        InteractionType.query.delete()
         db.session.commit()
+
+        # --- Interaction Types ---
+        for i, it_data in enumerate(DEFAULT_INTERACTION_TYPES):
+            db.session.add(InteractionType(sort_order=i, **it_data))
+        db.session.flush()
 
         # --- Quick Functions ---
         for i, qf_data in enumerate(DEFAULT_QUICK_FUNCTIONS):

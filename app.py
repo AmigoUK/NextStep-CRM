@@ -6,7 +6,7 @@ from markupsafe import Markup
 from config import Config
 from extensions import db
 
-APP_VERSION = "0.12.0-beta"
+APP_VERSION = "0.13.0-beta"
 
 
 def tel_link(value):
@@ -90,7 +90,10 @@ def create_app():
     app.register_blueprint(settings_bp, url_prefix="/settings")
 
     with app.app_context():
-        from models import Client, Contact, FollowUp, QuickFunction, DEFAULT_QUICK_FUNCTIONS, AppSettings  # noqa: F401
+        from models import (  # noqa: F401
+            Client, Contact, FollowUp, QuickFunction, DEFAULT_QUICK_FUNCTIONS,
+            AppSettings, InteractionType, DEFAULT_INTERACTION_TYPES,
+        )
         db.create_all()
 
         # Seed default quick functions if table is empty
@@ -100,10 +103,25 @@ def create_app():
                 db.session.add(qf)
             db.session.commit()
 
+        # Seed default interaction types if table is empty
+        if InteractionType.query.count() == 0:
+            for i, it_data in enumerate(DEFAULT_INTERACTION_TYPES):
+                it = InteractionType(sort_order=i, **it_data)
+                db.session.add(it)
+            db.session.commit()
+
     @app.context_processor
-    def inject_theme():
-        from models import AppSettings
-        return {"app_theme": AppSettings.get().theme}
+    def inject_globals():
+        from models import AppSettings, InteractionType
+        active_types = InteractionType.query.filter_by(is_active=True).order_by(
+            InteractionType.sort_order, InteractionType.id
+        ).all()
+        all_types = InteractionType.query.all()
+        return {
+            "app_theme": AppSettings.get().theme,
+            "interaction_types_map": {t.label: {"icon": t.icon, "colour": t.colour} for t in all_types},
+            "active_interaction_types": active_types,
+        }
 
     return app
 

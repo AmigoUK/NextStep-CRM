@@ -226,26 +226,26 @@ document.addEventListener("DOMContentLoaded", function () {
         typeLabel.textContent = "Activity Types";
         body.appendChild(typeLabel);
 
-        var typeTotal = qd.type_breakdown.phone + qd.type_breakdown.email + qd.type_breakdown.meeting;
+        var typeTotal = 0;
+        var typeKeys = Object.keys(qd.type_breakdown);
+        for (var tk = 0; tk < typeKeys.length; tk++) {
+            typeTotal += qd.type_breakdown[typeKeys[tk]];
+        }
         if (typeTotal > 0) {
             var typeBar = document.createElement("div");
             typeBar.className = "progress mb-2";
             typeBar.style.height = "22px";
 
-            var types = [
-                { key: "phone", colour: "#0d6efd", label: "Phone" },
-                { key: "email", colour: "#6f42c1", label: "Email" },
-                { key: "meeting", colour: "#fd7e14", label: "Meeting" }
-            ];
-            for (var t = 0; t < types.length; t++) {
-                var ct = types[t];
-                var count = qd.type_breakdown[ct.key];
+            var typeColours = data.type_colours || {};
+            for (var t = 0; t < typeKeys.length; t++) {
+                var tKey = typeKeys[t];
+                var count = qd.type_breakdown[tKey];
                 if (count > 0) {
                     var seg = document.createElement("div");
                     seg.className = "progress-bar";
-                    seg.style.backgroundColor = ct.colour;
+                    seg.style.backgroundColor = typeColours[tKey] || "#6c757d";
                     seg.style.width = Math.round((count / typeTotal) * 100) + "%";
-                    seg.title = ct.label + ": " + count;
+                    seg.title = tKey.charAt(0).toUpperCase() + tKey.slice(1) + ": " + count;
                     seg.textContent = count;
                     seg.style.fontSize = "0.7rem";
                     typeBar.appendChild(seg);
