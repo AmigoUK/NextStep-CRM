@@ -19,6 +19,10 @@ class FollowUp(db.Model):
     notes = db.Column(db.Text, default="")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    attachments = db.relationship(
+        "Attachment", backref="followup", cascade="all, delete-orphan", lazy=True
+    )
+
     @property
     def is_overdue(self):
         return not self.completed and self.due_date < date.today()

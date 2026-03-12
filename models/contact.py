@@ -17,5 +17,9 @@ class Contact(db.Model):
     outcome = db.Column(db.String(200), default="")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    attachments = db.relationship(
+        "Attachment", backref="contact", cascade="all, delete-orphan", lazy=True
+    )
+
     def __repr__(self):
         return f"<Contact {self.contact_type} on {self.date}>"

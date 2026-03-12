@@ -1,3 +1,4 @@
+import os
 from datetime import date, timedelta
 
 from flask import Flask
@@ -6,7 +7,7 @@ from markupsafe import Markup
 from config import Config
 from extensions import db
 
-APP_VERSION = "0.14.0-beta"
+APP_VERSION = "0.15.0-beta"
 
 
 def tel_link(value):
@@ -82,20 +83,24 @@ def create_app():
     from blueprints.contacts import contacts_bp
     from blueprints.followups import followups_bp
     from blueprints.settings import settings_bp
+    from blueprints.attachments import attachments_bp
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(clients_bp, url_prefix="/clients")
     app.register_blueprint(contacts_bp, url_prefix="/contacts")
     app.register_blueprint(followups_bp, url_prefix="/followups")
     app.register_blueprint(settings_bp, url_prefix="/settings")
+    app.register_blueprint(attachments_bp, url_prefix="/attachments")
 
     with app.app_context():
         from models import (  # noqa: F401
             Client, Contact, FollowUp, QuickFunction, DEFAULT_QUICK_FUNCTIONS,
             AppSettings, InteractionType, DEFAULT_INTERACTION_TYPES,
             CustomFieldDefinition, CustomFieldValue, DEFAULT_CUSTOM_FIELDS,
+            Attachment,
         )
         db.create_all()
+        os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
         # Seed default quick functions if table is empty
         if QuickFunction.query.count() == 0:

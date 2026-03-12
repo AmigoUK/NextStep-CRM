@@ -333,6 +333,15 @@
     }
 }
 
+/* Attachment list */
+.list-group-flush .list-group-item {
+    transition: background-color 0.15s;
+}
+
+.list-group-flush .list-group-item:hover {
+    background-color: rgba(13, 110, 253, 0.04);
+}
+
 /* ===== Dark Mode Overrides ===== */
 [data-bs-theme="dark"] .timeline-icon {
     background: #2b3035;

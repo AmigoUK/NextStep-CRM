@@ -119,6 +119,22 @@
                 </div>
             </div>
 
+            <!-- Attachments Card -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-paperclip me-1"></i>Attachments
+                        {% if client_attachments %}<span class="badge bg-secondary ms-1">{{ client_attachments|length }}</span>{% endif %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% include "partials/_upload_form.html" with context %}
+                    <hr class="my-2">
+                    {% with attachments=client_attachments %}
+                        {% include "partials/_attachment_list.html" %}
+                    {% endwith %}
+                </div>
+            </div>
+
             <!-- Quick-add buttons -->
             <div class="d-grid gap-2">
                 <a href="{{ url_for('contacts.create_contact', client_id=client.id) }}" class="btn btn-sm btn-outline-primary"
@@ -208,6 +224,9 @@
                     {% endif %}
                     {% if item.type == 'contact' and item.outcome %}
                         <small class="text-muted"><strong>Outcome:</strong> {{ item.outcome }}</small>
+                    {% endif %}
+                    {% if item.attachment_count %}
+                        <small class="text-muted"><i class="bi bi-paperclip me-1"></i>{{ item.attachment_count }} file{{ 's' if item.attachment_count > 1 }}</small>
                     {% endif %}
                 </div>
             </div>

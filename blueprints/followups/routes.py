@@ -1,10 +1,13 @@
+import os
+import uuid
 from datetime import date, datetime, timedelta
 
-from flask import flash, jsonify, redirect, render_template, request, url_for
+from flask import current_app, flash, jsonify, redirect, render_template, request, url_for
+from werkzeug.utils import secure_filename
 
 from blueprints.followups import followups_bp
 from extensions import db
-from models import Client, FollowUp, PRIORITIES
+from models import Client, FollowUp, PRIORITIES, Attachment
 
 
 def _is_ajax():
@@ -86,6 +89,13 @@ def create_followup():
             notes=request.form.get("notes", "").strip(),
         )
         db.session.add(followup)
+        db.session.flush()
+
+        # Handle optional file attachment
+        file = request.files.get("file")
+        if file and file.filename:
+            _save_followup_file(file, int(client_id), followup.id)
+
         db.session.commit()
 
         if _is_ajax():
@@ -160,6 +170,12 @@ def edit_followup(id):
         followup.priority = request.form.get("priority", "medium")
         followup.notes = request.form.get("notes", "").strip()
         followup.completed = "completed" in request.form
+
+        # Handle optional file attachment
+        file = request.files.get("file")
+        if file and file.filename:
+            _save_followup_file(file, int(client_id), followup.id)
+
         db.session.commit()
         flash("Follow-up updated successfully.", "success")
         return redirect(url_for("clients.detail_client", id=followup.client_id))
@@ -228,6 +244,28 @@ def matrix():
         eliminate=eliminate,
         show_completed=show_completed,
     )
+
+
+def _save_followup_file(file, client_id, followup_id):
+    """Save an uploaded file and create an Attachment record for a follow-up."""
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    client_dir = os.path.join(upload_folder, str(client_id))
+    os.makedirs(client_dir, exist_ok=True)
+
+    original_name = secure_filename(file.filename) or "unnamed_file"
+    stored_name = f"{uuid.uuid4().hex}_{original_name}"
+    file_path = os.path.join(client_dir, stored_name)
+    file.save(file_path)
+
+    attachment = Attachment(
+        filename=original_name,
+        stored_filename=stored_name,
+        file_size=os.path.getsize(file_path),
+        mime_type=file.content_type or "",
+        client_id=client_id,
+        followup_id=followup_id,
+    )
+    db.session.add(attachment)
 
 
 @followups_bp.route("/<int:id>/delete", methods=["POST"])

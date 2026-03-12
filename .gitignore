@@ -25,5 +25,8 @@ env/
 .DS_Store
 Thumbs.db
 
+# Uploads
+instance/uploads/
+
 # Environment
 .env

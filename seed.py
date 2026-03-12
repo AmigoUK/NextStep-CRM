@@ -8,6 +8,7 @@ from models import (
     Client, Contact, FollowUp, QuickFunction, DEFAULT_QUICK_FUNCTIONS,
     InteractionType, DEFAULT_INTERACTION_TYPES,
     CustomFieldDefinition, CustomFieldValue, DEFAULT_CUSTOM_FIELDS,
+    Attachment,
 )
 
 
@@ -15,6 +16,7 @@ def seed():
     app = create_app()
     with app.app_context():
         # Clear existing data
+        Attachment.query.delete()
         CustomFieldValue.query.delete()
         CustomFieldDefinition.query.delete()
         FollowUp.query.delete()

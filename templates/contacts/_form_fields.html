@@ -1,4 +1,4 @@
-<form method="POST">
+<form method="POST" enctype="multipart/form-data">
     <div class="mb-3">
         <label for="client_id" class="form-label">Client <span class="text-danger">*</span></label>
         <select class="form-select" id="client_id" name="client_id" required>
@@ -46,6 +46,11 @@
         <input type="text" class="form-control" id="outcome" name="outcome"
                value="{{ contact.outcome if contact else '' }}"
                placeholder="e.g. Agreed to follow-up call next week">
+    </div>
+
+    <div class="mb-3">
+        <label for="file" class="form-label">Attachment <small class="text-muted">(optional)</small></label>
+        <input type="file" class="form-control" id="file" name="file">
     </div>
 
     <div class="d-flex gap-2">

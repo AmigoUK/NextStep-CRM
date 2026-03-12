@@ -29,6 +29,9 @@ class Client(db.Model):
     custom_field_values = db.relationship(
         "CustomFieldValue", backref="client", cascade="all, delete-orphan", lazy=True
     )
+    attachments = db.relationship(
+        "Attachment", backref="client", cascade="all, delete-orphan", lazy=True
+    )
 
     def __repr__(self):
         return f"<Client {self.company_name}>"

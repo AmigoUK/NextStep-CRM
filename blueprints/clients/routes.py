@@ -1,11 +1,13 @@
+import os
+import shutil
 from datetime import date, datetime
 
-from flask import flash, jsonify, redirect, render_template, request, url_for
+from flask import current_app, flash, jsonify, redirect, render_template, request, url_for
 from sqlalchemy import func
 
 from blueprints.clients import clients_bp
 from extensions import db
-from models import Client, CLIENT_STATUSES, Contact, FollowUp, QuickFunction, InteractionType, CustomFieldDefinition, CustomFieldValue
+from models import Client, CLIENT_STATUSES, Contact, FollowUp, QuickFunction, InteractionType, CustomFieldDefinition, CustomFieldValue, Attachment
 
 
 def _is_ajax():
@@ -173,6 +175,7 @@ def detail_client(id):
             "outcome": c.outcome,
             "edit_url": url_for("contacts.edit_contact", id=c.id),
             "obj": c,
+            "attachment_count": len(c.attachments),
         })
     for fu in client.followups:
         timeline.append({
@@ -188,6 +191,7 @@ def detail_client(id):
             "edit_url": url_for("followups.edit_followup", id=fu.id),
             "complete_url": url_for("followups.complete_followup", id=fu.id),
             "obj": fu,
+            "attachment_count": len(fu.attachments),
         })
     timeline.sort(key=lambda x: x["date"], reverse=True)
 
@@ -213,6 +217,11 @@ def detail_client(id):
         for v in CustomFieldValue.query.filter_by(client_id=client.id).all()
     }
 
+    # All attachments for this client (direct + via contacts/followups)
+    client_attachments = Attachment.query.filter_by(client_id=client.id).order_by(
+        Attachment.created_at.desc()
+    ).all()
+
     return render_template(
         "clients/detail.html",
         client=client,
@@ -228,6 +237,8 @@ def detail_client(id):
         ).order_by(QuickFunction.sort_order).all()],
         custom_fields=active_custom_fields,
         custom_values=custom_values,
+        client_attachments=client_attachments,
+        client_id=client.id,
     )
 
 
@@ -340,7 +351,14 @@ def quick_action(id):
 def delete_client(id):
     client = db.get_or_404(Client, id)
     name = client.company_name
+    client_id = client.id
     db.session.delete(client)
     db.session.commit()
+
+    # Clean up uploads directory for this client
+    upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], str(client_id))
+    if os.path.isdir(upload_dir):
+        shutil.rmtree(upload_dir)
+
     flash(f"Client '{name}' deleted successfully.", "success")
     return redirect(url_for("clients.list_clients"))
