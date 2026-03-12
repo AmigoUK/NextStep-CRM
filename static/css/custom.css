@@ -133,6 +133,12 @@
     border-left: 3px solid #dc3545;
 }
 
+/* Client profile sidebar — sticky on tall timelines */
+.client-profile-sidebar {
+    position: sticky;
+    top: 1rem;
+}
+
 /* Mobile responsive tables — stacked card layout */
 @media (max-width: 767.98px) {
     .table-responsive table thead {

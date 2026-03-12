@@ -138,12 +138,23 @@ def detail_client(id):
     pending_dates = [fu.due_date for fu in client.followups if not fu.completed]
     next_followup = min(pending_dates) if pending_dates else None
 
+    # Relationship summary stats
+    total_contacts = len(client.contacts)
+    total_followups = len(client.followups)
+    completed_followups = sum(1 for fu in client.followups if fu.completed)
+    pending_followups = total_followups - completed_followups
+    completion_rate = round((completed_followups / total_followups) * 100) if total_followups else 0
+
     return render_template(
         "clients/detail.html",
         client=client,
         timeline=timeline,
         last_contact=last_contact,
         next_followup=next_followup,
+        total_contacts=total_contacts,
+        total_followups=total_followups,
+        pending_followups=pending_followups,
+        completion_rate=completion_rate,
     )
 
 
