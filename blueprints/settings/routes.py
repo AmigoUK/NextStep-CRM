@@ -95,3 +95,16 @@ def delete_quick_function(id):
     db.session.commit()
     flash(f"Quick function '{label}' deleted.", "success")
     return redirect(url_for("settings.settings_page"))
+
+
+@settings_bp.route("/theme", methods=["POST"])
+def update_theme():
+    data = request.get_json(silent=True) or {}
+    theme = data.get("theme", "light")
+    if theme not in ("light", "dark", "auto"):
+        return jsonify({"ok": False, "error": "Invalid theme."}), 400
+
+    settings = AppSettings.get()
+    settings.theme = theme
+    db.session.commit()
+    return jsonify({"ok": True, "theme": theme})

@@ -5,7 +5,7 @@ from flask import Flask
 from config import Config
 from extensions import db
 
-APP_VERSION = "0.10.0-beta"
+APP_VERSION = "0.11.0-beta"
 
 
 def relative_date(d):
@@ -80,6 +80,11 @@ def create_app():
                 qf = QuickFunction(sort_order=i, **qf_data)
                 db.session.add(qf)
             db.session.commit()
+
+    @app.context_processor
+    def inject_theme():
+        from models import AppSettings
+        return {"app_theme": AppSettings.get().theme}
 
     return app
 

@@ -78,8 +78,45 @@
     <div class="card-header">
         <h5 class="mb-0"><i class="bi bi-palette me-1"></i>Colour Scheme</h5>
     </div>
-    <div class="card-body text-muted">
-        <i class="bi bi-clock me-1"></i>Coming soon
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="card theme-option h-100 {{ 'border-primary border-2' if settings.theme == 'light' }}"
+                     data-theme="light" role="button">
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-sun fs-1 d-block mb-2"></i>
+                        <h6 class="mb-1">Light</h6>
+                        <small class="text-muted">Default bright theme</small>
+                        <input type="radio" name="theme" value="light" class="d-none"
+                               {{ 'checked' if settings.theme == 'light' }}>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card theme-option h-100 {{ 'border-primary border-2' if settings.theme == 'dark' }}"
+                     data-theme="dark" role="button">
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-moon-stars fs-1 d-block mb-2"></i>
+                        <h6 class="mb-1">Dark</h6>
+                        <small class="text-muted">Easy on the eyes</small>
+                        <input type="radio" name="theme" value="dark" class="d-none"
+                               {{ 'checked' if settings.theme == 'dark' }}>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card theme-option h-100 {{ 'border-primary border-2' if settings.theme == 'auto' }}"
+                     data-theme="auto" role="button">
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-circle-half fs-1 d-block mb-2"></i>
+                        <h6 class="mb-1">System</h6>
+                        <small class="text-muted">Follows OS preference</small>
+                        <input type="radio" name="theme" value="auto" class="d-none"
+                               {{ 'checked' if settings.theme == 'auto' }}>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -196,33 +233,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-/* Toggle switch AJAX handler */
-document.querySelectorAll(".settings-toggle").forEach(function (toggle) {
-    toggle.addEventListener("change", function () {
-        var url = this.getAttribute("data-toggle-url");
-        var row = this.closest("tr");
-
-        fetch(url, {
-            method: "POST",
-            headers: { "X-Requested-With": "XMLHttpRequest" }
-        })
-        .then(function (resp) { return resp.json(); })
-        .then(function (data) {
-            if (data.ok) {
-                if (data.is_active) {
-                    row.classList.remove("text-muted");
-                } else {
-                    row.classList.add("text-muted");
-                }
-                window.showToast(data.message, "success");
-            }
-        })
-        .catch(function () {
-            toggle.checked = !toggle.checked;
-            window.showToast("Failed to update. Please try again.", "danger");
-        });
-    });
-});
-</script>
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 {% endblock %}

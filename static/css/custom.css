@@ -316,9 +316,66 @@
     cursor: pointer;
 }
 
+/* Theme option cards */
+.theme-option {
+    cursor: pointer;
+    transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.theme-option:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
 /* Offcanvas panel — full-width on small screens */
 @media (max-width: 575.98px) {
     #quickAddPanel {
         width: 100% !important;
+    }
+}
+
+/* ===== Dark Mode Overrides ===== */
+[data-bs-theme="dark"] .timeline-icon {
+    background: #2b3035;
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] .timeline::before {
+    background: #495057;
+}
+
+[data-bs-theme="dark"] .timeline-content {
+    background: #2b3035;
+}
+
+[data-bs-theme="dark"] .timeline-overdue .timeline-content {
+    background: #3d2e00;
+    border-left-color: #dc3545;
+}
+
+[data-bs-theme="dark"] .kanban-card {
+    background: #2b3035;
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] .overdue {
+    background-color: #3d2e00 !important;
+}
+
+[data-bs-theme="dark"] .table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-bs-theme="dark"] .btn-quick-function:hover {
+    background-color: #3d2e00;
+}
+
+@media (max-width: 767.98px) {
+    [data-bs-theme="dark"] .table-responsive table tbody tr {
+        background: #2b3035;
+        border-color: #495057;
+    }
+
+    [data-bs-theme="dark"] .table-responsive table tbody td {
+        border-bottom-color: #495057;
     }
 }
