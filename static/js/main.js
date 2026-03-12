@@ -1,4 +1,42 @@
-/* NextStep CRM — Delete confirmation modal handler + toast notifications */
+/* NextStep CRM — Delete confirmation modal handler + toast notifications + quick functions */
+
+/* Global showToast — used by main.js and panel.js */
+window.showToast = function (message, category) {
+    var container = document.querySelector(".toast-container");
+    if (!container) {
+        container = document.createElement("div");
+        container.className = "toast-container position-fixed top-0 end-0 p-3";
+        container.style.zIndex = "1080";
+        document.body.appendChild(container);
+    }
+
+    var toastEl = document.createElement("div");
+    toastEl.className = "toast align-items-center text-bg-" + category + " border-0";
+    toastEl.setAttribute("role", "alert");
+
+    var flex = document.createElement("div");
+    flex.className = "d-flex";
+
+    var body = document.createElement("div");
+    body.className = "toast-body";
+    var icon = document.createElement("i");
+    icon.className = "bi bi-check-circle me-1";
+    body.appendChild(icon);
+    body.appendChild(document.createTextNode(message));
+    flex.appendChild(body);
+
+    var closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "btn-close btn-close-white me-2 m-auto";
+    closeBtn.setAttribute("data-bs-dismiss", "toast");
+    flex.appendChild(closeBtn);
+
+    toastEl.appendChild(flex);
+    container.appendChild(toastEl);
+
+    var toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+    toast.show();
+};
 
 document.addEventListener("DOMContentLoaded", function () {
     /* Delete modal */
@@ -20,6 +58,84 @@ document.addEventListener("DOMContentLoaded", function () {
         var toast = new bootstrap.Toast(toastEl);
         toast.show();
     });
+
+    /* Quick Function handler — event delegation */
+    document.addEventListener("click", function (e) {
+        var btn = e.target.closest(".btn-quick-function");
+        if (!btn) return;
+        e.preventDefault();
+
+        var modal = document.getElementById("quickFunctionModal");
+        if (!modal) return;
+
+        document.getElementById("qfActionLabel").textContent = btn.getAttribute("data-action-label");
+        document.getElementById("qfClientName").textContent = btn.getAttribute("data-client-name");
+        document.getElementById("qfType").textContent = btn.getAttribute("data-action-type");
+        document.getElementById("qfNotes").textContent = btn.getAttribute("data-action-notes");
+        document.getElementById("qfDate").textContent = new Date().toLocaleDateString("en-GB");
+        document.getElementById("qfActionId").value = btn.getAttribute("data-action-id");
+        document.getElementById("qfForm").action = btn.getAttribute("data-action-url");
+
+        var bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+    });
+
+    /* Quick Function form submit — AJAX */
+    var qfForm = document.getElementById("qfForm");
+    if (qfForm) {
+        qfForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            var confirmBtn = document.getElementById("qfConfirmBtn");
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = "";
+            var spinnerSpan = document.createElement("span");
+            spinnerSpan.className = "spinner-border spinner-border-sm me-1";
+            confirmBtn.appendChild(spinnerSpan);
+            confirmBtn.appendChild(document.createTextNode("Saving..."));
+
+            var formData = new FormData(qfForm);
+            fetch(qfForm.action, {
+                method: "POST",
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                body: formData
+            })
+            .then(function (resp) { return resp.json(); })
+            .then(function (data) {
+                var modal = bootstrap.Modal.getInstance(document.getElementById("quickFunctionModal"));
+                if (modal) modal.hide();
+
+                if (data.ok) {
+                    window.showToast(data.message, "success");
+                    setTimeout(function () { location.reload(); }, 600);
+                } else {
+                    window.showToast(data.error || "Something went wrong.", "danger");
+                    _resetQfConfirmBtn();
+                }
+            })
+            .catch(function () {
+                qfForm.submit();
+            });
+        });
+    }
+
+    function _resetQfConfirmBtn() {
+        var confirmBtn = document.getElementById("qfConfirmBtn");
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = "";
+        var icon = document.createElement("i");
+        icon.className = "bi bi-check-lg me-1";
+        confirmBtn.appendChild(icon);
+        confirmBtn.appendChild(document.createTextNode("Confirm"));
+    }
+
+    /* Reset quick function modal on close */
+    var qfModal = document.getElementById("quickFunctionModal");
+    if (qfModal) {
+        qfModal.addEventListener("hidden.bs.modal", function () {
+            _resetQfConfirmBtn();
+        });
+    }
 
     /* Follow-up completion → outcome flow */
     var navigatingAway = false;

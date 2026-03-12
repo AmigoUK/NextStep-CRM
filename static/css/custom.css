@@ -232,6 +232,15 @@
     }
 }
 
+/* Quick function buttons */
+.btn-quick-function {
+    font-size: 0.875rem;
+}
+
+.btn-quick-function:hover {
+    background-color: #fff3cd;
+}
+
 /* Offcanvas panel — full-width on small screens */
 @media (max-width: 575.98px) {
     #quickAddPanel {

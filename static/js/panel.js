@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(function (data) {
                 if (data.ok) {
                     bsOffcanvas.hide();
-                    showToast(data.message || "Saved successfully.", "success");
+                    window.showToast(data.message || "Saved successfully.", "success");
                     setTimeout(function () {
                         location.reload();
                     }, 600);
@@ -109,40 +109,4 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function showToast(message, category) {
-        var container = document.querySelector(".toast-container");
-        if (!container) {
-            container = document.createElement("div");
-            container.className = "toast-container position-fixed top-0 end-0 p-3";
-            container.style.zIndex = "1080";
-            document.body.appendChild(container);
-        }
-
-        var toastEl = document.createElement("div");
-        toastEl.className = "toast align-items-center text-bg-" + category + " border-0";
-        toastEl.setAttribute("role", "alert");
-
-        var flex = document.createElement("div");
-        flex.className = "d-flex";
-
-        var body = document.createElement("div");
-        body.className = "toast-body";
-        var icon = document.createElement("i");
-        icon.className = "bi bi-check-circle me-1";
-        body.appendChild(icon);
-        body.appendChild(document.createTextNode(message));
-        flex.appendChild(body);
-
-        var closeBtn = document.createElement("button");
-        closeBtn.type = "button";
-        closeBtn.className = "btn-close btn-close-white me-2 m-auto";
-        closeBtn.setAttribute("data-bs-dismiss", "toast");
-        flex.appendChild(closeBtn);
-
-        toastEl.appendChild(flex);
-        container.appendChild(toastEl);
-
-        var toast = new bootstrap.Toast(toastEl, { delay: 4000 });
-        toast.show();
-    }
 });

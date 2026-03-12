@@ -1,0 +1,34 @@
+<!-- Quick Function Confirmation Modal -->
+<div class="modal fade" id="quickFunctionModal" tabindex="-1" aria-labelledby="quickFunctionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="quickFunctionModalLabel">
+                    <i class="bi bi-lightning-charge me-1"></i>Quick Function
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">
+                    Log <strong id="qfActionLabel"></strong> for <strong id="qfClientName"></strong>?
+                </p>
+                <div class="card bg-light border-0">
+                    <div class="card-body py-2">
+                        <small class="text-muted d-block"><strong>Type:</strong> <span id="qfType"></span></small>
+                        <small class="text-muted d-block"><strong>Notes:</strong> <span id="qfNotes"></span></small>
+                        <small class="text-muted d-block"><strong>Date:</strong> <span id="qfDate"></span></small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="qfForm" method="POST">
+                    <input type="hidden" name="action_id" id="qfActionId">
+                    <button type="submit" class="btn btn-primary" id="qfConfirmBtn">
+                        <i class="bi bi-check-lg me-1"></i>Confirm
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,9 +1,11 @@
+from datetime import date, datetime
+
 from flask import flash, jsonify, redirect, render_template, request, url_for
 from sqlalchemy import func
 
 from blueprints.clients import clients_bp
 from extensions import db
-from models import Client, CLIENT_STATUSES, Contact, FollowUp
+from models import Client, CLIENT_STATUSES, Contact, FollowUp, QUICK_FUNCTIONS
 
 
 def _is_ajax():
@@ -67,6 +69,7 @@ def list_clients():
         q=q,
         status=status,
         view=view,
+        quick_functions=QUICK_FUNCTIONS,
     )
 
 
@@ -185,6 +188,7 @@ def detail_client(id):
         total_followups=total_followups,
         pending_followups=pending_followups,
         completion_rate=completion_rate,
+        quick_functions=QUICK_FUNCTIONS,
     )
 
 
@@ -229,6 +233,37 @@ def update_status(id):
     client.status = new_status
     db.session.commit()
     return jsonify({"ok": True, "status": new_status})
+
+
+@clients_bp.route("/<int:id>/quick-action", methods=["POST"])
+def quick_action(id):
+    client = db.get_or_404(Client, id)
+    action_id = request.form.get("action_id", "").strip()
+
+    qf = next((q for q in QUICK_FUNCTIONS if q["id"] == action_id), None)
+    if not qf:
+        if _is_ajax():
+            return jsonify({"ok": False, "error": "Invalid quick function."}), 400
+        flash("Invalid quick function.", "danger")
+        return redirect(url_for("clients.detail_client", id=client.id))
+
+    contact = Contact(
+        client_id=client.id,
+        date=date.today(),
+        time=datetime.now().time().replace(microsecond=0),
+        contact_type=qf["contact_type"],
+        notes=qf["notes"],
+        outcome=qf["outcome"],
+    )
+    db.session.add(contact)
+    db.session.commit()
+
+    message = f'"{qf["label"]}" logged for {client.company_name}.'
+    if _is_ajax():
+        return jsonify({"ok": True, "message": message})
+
+    flash(message, "success")
+    return redirect(url_for("clients.detail_client", id=client.id))
 
 
 @clients_bp.route("/<int:id>/delete", methods=["POST"])

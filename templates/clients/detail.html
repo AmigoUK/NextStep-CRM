@@ -114,6 +114,27 @@
                    data-panel-title="Add Follow-up">
                     <i class="bi bi-calendar-check me-1"></i>Add Follow-up
                 </a>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-warning w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-lightning-charge me-1"></i>Quick Functions
+                    </button>
+                    <ul class="dropdown-menu w-100">
+                        {% for qf in quick_functions %}
+                        <li>
+                            <a class="dropdown-item btn-quick-function" href="#"
+                               data-action-id="{{ qf.id }}"
+                               data-action-label="{{ qf.label }}"
+                               data-action-type="{{ qf.contact_type }}"
+                               data-action-notes="{{ qf.notes }}"
+                               data-client-id="{{ client.id }}"
+                               data-client-name="{{ client.company_name }}"
+                               data-action-url="{{ url_for('clients.quick_action', id=client.id) }}">
+                                <i class="bi {{ qf.icon }} me-2"></i>{{ qf.label }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
