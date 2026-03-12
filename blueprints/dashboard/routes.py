@@ -116,3 +116,70 @@ def api_events():
         })
 
     return jsonify(events)
+
+
+@dashboard_bp.route("/agenda")
+def agenda():
+    """Daily planner view — follow-ups grouped by time horizon."""
+    today = date.today()
+    tomorrow = today + timedelta(days=1)
+    end_of_week = today + timedelta(days=(6 - today.weekday()))
+    start_next_week = end_of_week + timedelta(days=1)
+    end_next_week = start_next_week + timedelta(days=6)
+    later_end = today + timedelta(days=60)
+
+    # Overdue
+    overdue = FollowUp.query.filter(
+        FollowUp.due_date < today,
+        FollowUp.completed == False,  # noqa: E712
+    ).order_by(FollowUp.due_date).all()
+
+    # Today
+    today_followups = FollowUp.query.filter(
+        FollowUp.due_date == today,
+        FollowUp.completed == False,  # noqa: E712
+    ).order_by(FollowUp.due_date).all()
+
+    # Today's interactions
+    today_contacts = Contact.query.filter(
+        Contact.date == today,
+    ).order_by(Contact.created_at.desc()).all()
+
+    # Tomorrow
+    tomorrow_followups = FollowUp.query.filter(
+        FollowUp.due_date == tomorrow,
+        FollowUp.completed == False,  # noqa: E712
+    ).all()
+
+    # This week (day after tomorrow through end of week)
+    day_after_tomorrow = tomorrow + timedelta(days=1)
+    this_week = FollowUp.query.filter(
+        FollowUp.due_date >= day_after_tomorrow,
+        FollowUp.due_date <= end_of_week,
+        FollowUp.completed == False,  # noqa: E712
+    ).order_by(FollowUp.due_date).all()
+
+    # Next week
+    next_week = FollowUp.query.filter(
+        FollowUp.due_date >= start_next_week,
+        FollowUp.due_date <= end_next_week,
+        FollowUp.completed == False,  # noqa: E712
+    ).order_by(FollowUp.due_date).all()
+
+    # Later (beyond next week, up to 60 days)
+    later = FollowUp.query.filter(
+        FollowUp.due_date > end_next_week,
+        FollowUp.due_date <= later_end,
+        FollowUp.completed == False,  # noqa: E712
+    ).order_by(FollowUp.due_date).all()
+
+    return render_template(
+        "dashboard/agenda.html",
+        overdue=overdue,
+        today_followups=today_followups,
+        today_contacts=today_contacts,
+        tomorrow_followups=tomorrow_followups,
+        this_week=this_week,
+        next_week=next_week,
+        later=later,
+    )

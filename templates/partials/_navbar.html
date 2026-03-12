@@ -21,6 +21,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'dashboard.agenda' %}active{% endif %}"
+                       href="{{ url_for('dashboard.agenda') }}">
+                        <i class="bi bi-journal-text me-1"></i>Agenda
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint and request.endpoint.startswith('clients.') %}active{% endif %}"
                        href="{{ url_for('clients.list_clients') }}">
                         <i class="bi bi-building me-1"></i>Clients
