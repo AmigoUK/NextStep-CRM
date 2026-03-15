@@ -262,4 +262,4 @@ if __name__ == "__main__":
     import warnings
     warnings.filterwarnings("ignore", message="resource_tracker:.*semaphore", category=UserWarning)
     app = create_app()
-    app.run(debug=True, port=5001, use_reloader=False)
+    app.run(debug=True, host='0.0.0.0', port=5001)

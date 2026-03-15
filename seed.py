@@ -1,5 +1,6 @@
 """Populate the database with sample data for demonstration."""
 
+import random
 from datetime import date, time, timedelta
 
 from app import create_app
@@ -14,8 +15,452 @@ from models import (
     User,
 )
 
+# ---------------------------------------------------------------------------
+# Curated client data
+# ---------------------------------------------------------------------------
+
+UK_CLIENTS = [
+    # First 15 preserve existing companies
+    {"company_name": "Thornbury & Associates", "industry": "Legal Services", "phone": "020 7946 0123", "email": "info@thornbury.co.uk", "contact_person": "Margaret Thornbury", "status": "active"},
+    {"company_name": "Brightwell Manufacturing", "industry": "Manufacturing", "phone": "0121 496 0456", "email": "sales@brightwell.co.uk", "contact_person": "David Brightwell", "status": "active"},
+    {"company_name": "Hargreaves Digital", "industry": "Technology", "phone": "0161 946 0789", "email": "hello@hargreaves.digital", "contact_person": "Sarah Hargreaves", "status": "active"},
+    {"company_name": "Pemberton Logistics", "industry": "Transport & Logistics", "phone": "0113 496 0321", "email": "enquiries@pemberton-logistics.co.uk", "contact_person": "James Pemberton", "status": "prospect"},
+    {"company_name": "Ashworth Catering", "industry": "Hospitality", "phone": "0151 946 0654", "email": "bookings@ashworthcatering.co.uk", "contact_person": "Emily Ashworth", "status": "prospect"},
+    {"company_name": "Cartwright Properties", "industry": "Real Estate", "phone": "020 7946 0987", "email": "lettings@cartwrightprops.co.uk", "contact_person": "Richard Cartwright", "status": "lead"},
+    {"company_name": "Fenwick & Cole Accountants", "industry": "Financial Services", "phone": "0117 496 0147", "email": "partners@fenwickcole.co.uk", "contact_person": "Helen Fenwick", "status": "lead"},
+    {"company_name": "Greenfield Organics", "industry": "Agriculture", "phone": "0115 496 0258", "email": "farm@greenfieldorganics.co.uk", "contact_person": "Tom Greenfield", "status": "active"},
+    {"company_name": "Mercer Engineering", "industry": "Engineering", "phone": "0114 496 0369", "email": "projects@mercer-eng.co.uk", "contact_person": "Alan Mercer", "status": "inactive"},
+    {"company_name": "Whitmore Creative Agency", "industry": "Marketing", "phone": "020 7946 0741", "email": "studio@whitmorecreative.co.uk", "contact_person": "Lucy Whitmore", "status": "lead"},
+    {"company_name": "Oakbridge Consulting", "industry": "Management Consulting", "phone": "020 7946 0852", "email": "enquiries@oakbridgeconsulting.co.uk", "contact_person": "William Oakbridge", "status": "active"},
+    {"company_name": "Redcastle Healthcare", "industry": "Healthcare", "phone": "0161 946 0963", "email": "admin@redcastlehealthcare.co.uk", "contact_person": "Priya Sharma", "status": "active"},
+    {"company_name": "Longmere Education", "industry": "Education", "phone": "0113 496 0174", "email": "info@longmere-education.co.uk", "contact_person": "Catherine Longmere", "status": "prospect"},
+    {"company_name": "Stonewick Retail Group", "industry": "Retail", "phone": "0151 946 0285", "email": "buyers@stonewickretail.co.uk", "contact_person": "Daniel Stonewick", "status": "lead"},
+    {"company_name": "Blackwood Energy Solutions", "industry": "Energy", "phone": "0131 496 0396", "email": "projects@blackwoodenergy.co.uk", "contact_person": "Fiona Blackwood", "status": "inactive"},
+    # 15-39: additional UK clients
+    {"company_name": "Harrowgate Telecom", "industry": "Telecom", "phone": "0113 946 0412", "email": "info@harrowgatetelecom.co.uk", "contact_person": "George Harrowgate", "status": "active"},
+    {"company_name": "Dunmore Pharma", "industry": "Pharma", "phone": "020 7946 0513", "email": "enquiries@dunmorepharma.co.uk", "contact_person": "Dr. Susan Dunmore", "status": "active"},
+    {"company_name": "Crestfield Construction", "industry": "Construction", "phone": "0121 496 0624", "email": "tenders@crestfieldconstruction.co.uk", "contact_person": "Mark Crestfield", "status": "prospect"},
+    {"company_name": "Waverly Media Group", "industry": "Media", "phone": "020 7946 0735", "email": "press@waverlymedia.co.uk", "contact_person": "Olivia Waverly", "status": "lead"},
+    {"company_name": "Sterling Insurance", "industry": "Insurance", "phone": "0161 946 0846", "email": "claims@sterlinginsurance.co.uk", "contact_person": "Patrick Sterling", "status": "active"},
+    {"company_name": "Ashford & Partners", "industry": "Legal Services", "phone": "0117 496 0957", "email": "legal@ashfordpartners.co.uk", "contact_person": "Victoria Ashford", "status": "prospect"},
+    {"company_name": "Huxley Biotech", "industry": "Pharma", "phone": "01onal 496 0168", "email": "research@huxleybiotech.co.uk", "contact_person": "Dr. James Huxley", "status": "active"},
+    {"company_name": "Pennington Foods", "industry": "Food & Beverage", "phone": "0151 946 0279", "email": "orders@penningtonfoods.co.uk", "contact_person": "Rachel Pennington", "status": "active"},
+    {"company_name": "Kingsley Motors", "industry": "Automotive", "phone": "0121 496 0381", "email": "fleet@kingsleymotors.co.uk", "contact_person": "Andrew Kingsley", "status": "prospect"},
+    {"company_name": "Beaumont Hotels", "industry": "Hospitality", "phone": "020 7946 0492", "email": "reservations@beaumonthotels.co.uk", "contact_person": "Claire Beaumont", "status": "lead"},
+    {"company_name": "Greystone Mining", "industry": "Mining", "phone": "01onal 946 0514", "email": "operations@greystonemining.co.uk", "contact_person": "Robert Greystone", "status": "inactive"},
+    {"company_name": "Whitfield Textiles", "industry": "Manufacturing", "phone": "0161 946 0625", "email": "sales@whitfieldtextiles.co.uk", "contact_person": "Emma Whitfield", "status": "active"},
+    {"company_name": "Barrington Wealth", "industry": "Financial Services", "phone": "020 7946 0736", "email": "advisory@barringtonwealth.co.uk", "contact_person": "Henry Barrington", "status": "active"},
+    {"company_name": "Lockwood Architects", "industry": "Construction", "phone": "0113 496 0847", "email": "design@lockwoodarchitects.co.uk", "contact_person": "Sophie Lockwood", "status": "prospect"},
+    {"company_name": "Sanderson Transport", "industry": "Transport & Logistics", "phone": "0114 496 0958", "email": "dispatch@sandersontransport.co.uk", "contact_person": "Neil Sanderson", "status": "lead"},
+    {"company_name": "Hartley Publishing", "industry": "Media", "phone": "020 7946 0169", "email": "submissions@hartleypublishing.co.uk", "contact_person": "Diana Hartley", "status": "active"},
+    {"company_name": "Cromwell Defence", "industry": "Defence", "phone": "01onal 496 0271", "email": "contracts@cromwelldefence.co.uk", "contact_person": "Colonel Peter Cromwell", "status": "prospect"},
+    {"company_name": "Northgate IT Services", "industry": "Technology", "phone": "0161 946 0382", "email": "support@northgateit.co.uk", "contact_person": "Kevin Northgate", "status": "lead"},
+    {"company_name": "Aldridge Environmental", "industry": "Environmental Services", "phone": "0117 496 0493", "email": "info@aldridgeenvironmental.co.uk", "contact_person": "Laura Aldridge", "status": "inactive"},
+    {"company_name": "Fairfax Recruitment", "industry": "Human Resources", "phone": "020 7946 0515", "email": "hire@fairfaxrecruitment.co.uk", "contact_person": "Simon Fairfax", "status": "active"},
+    {"company_name": "Burroughs Aerospace", "industry": "Aerospace", "phone": "01onal 946 0626", "email": "projects@burroughsaero.co.uk", "contact_person": "Dr. Hannah Burroughs", "status": "prospect"},
+    {"company_name": "Chilton Veterinary Group", "industry": "Healthcare", "phone": "01onal 496 0737", "email": "reception@chiltonvets.co.uk", "contact_person": "Dr. Michael Chilton", "status": "lead"},
+    {"company_name": "Elmswood Furniture", "industry": "Retail", "phone": "0114 496 0848", "email": "showroom@elmswoodfurniture.co.uk", "contact_person": "Jennifer Elmswood", "status": "active"},
+    {"company_name": "Rutherford Analytics", "industry": "Technology", "phone": "0131 496 0959", "email": "data@rutherfordanalytics.co.uk", "contact_person": "Dr. Ian Rutherford", "status": "active"},
+    {"company_name": "Prescott Shipping", "industry": "Transport & Logistics", "phone": "0151 946 0161", "email": "cargo@prescottshipping.co.uk", "contact_person": "Thomas Prescott", "status": "inactive"},
+]
+
+US_CLIENTS = [
+    {"company_name": "Pinnacle Software Inc", "industry": "Technology", "phone": "(415) 555-0123", "email": "info@pinnaclesoft.com", "contact_person": "Mike Chen", "status": "active"},
+    {"company_name": "Great Lakes Manufacturing", "industry": "Manufacturing", "phone": "(312) 555-0234", "email": "sales@greatlakesmfg.com", "contact_person": "Karen O'Brien", "status": "active"},
+    {"company_name": "Redwood Capital Partners", "industry": "Financial Services", "phone": "(212) 555-0345", "email": "invest@redwoodcapital.com", "contact_person": "Jonathan Reeves", "status": "prospect"},
+    {"company_name": "Sunshine Health Systems", "industry": "Healthcare", "phone": "(305) 555-0456", "email": "admin@sunshinehealth.com", "contact_person": "Dr. Maria Rodriguez", "status": "active"},
+    {"company_name": "Pacific Rim Trading", "industry": "Import/Export", "phone": "(206) 555-0567", "email": "trade@pacificrimtrading.com", "contact_person": "David Tanaka", "status": "prospect"},
+    {"company_name": "Liberty Legal Group", "industry": "Legal Services", "phone": "(202) 555-0678", "email": "partners@libertylegal.com", "contact_person": "Sarah Washington", "status": "lead"},
+    {"company_name": "Heartland Agriculture Co", "industry": "Agriculture", "phone": "(515) 555-0789", "email": "info@heartlandag.com", "contact_person": "Bob Miller", "status": "active"},
+    {"company_name": "Skyline Construction LLC", "industry": "Construction", "phone": "(303) 555-0891", "email": "bids@skylineconstruction.com", "contact_person": "Carlos Mendez", "status": "prospect"},
+    {"company_name": "Digital Frontier Media", "industry": "Media", "phone": "(310) 555-0912", "email": "content@digitalfrontier.com", "contact_person": "Ashley Park", "status": "lead"},
+    {"company_name": "Patriot Insurance Corp", "industry": "Insurance", "phone": "(617) 555-0134", "email": "claims@patriotinsurance.com", "contact_person": "Brian Murphy", "status": "active"},
+    {"company_name": "Mountain View Pharma", "industry": "Pharma", "phone": "(650) 555-0245", "email": "research@mountainviewpharma.com", "contact_person": "Dr. Lisa Chang", "status": "active"},
+    {"company_name": "Lone Star Energy", "industry": "Energy", "phone": "(713) 555-0356", "email": "ops@lonestarenergy.com", "contact_person": "Travis Henderson", "status": "prospect"},
+    {"company_name": "Harbor Freight Logistics", "industry": "Transport & Logistics", "phone": "(562) 555-0467", "email": "dispatch@harborfreight.com", "contact_person": "Tony Russo", "status": "lead"},
+    {"company_name": "Empire State Consulting", "industry": "Management Consulting", "phone": "(212) 555-0578", "email": "engage@empirestateconsulting.com", "contact_person": "Rachel Goldman", "status": "active"},
+    {"company_name": "Silicon Prairie Tech", "industry": "Technology", "phone": "(402) 555-0689", "email": "hello@siliconprairie.com", "contact_person": "Jake Anderson", "status": "lead"},
+    {"company_name": "Golden Gate Hospitality", "industry": "Hospitality", "phone": "(415) 555-0791", "email": "events@goldengatehospitality.com", "contact_person": "Michelle Torres", "status": "inactive"},
+    {"company_name": "Midwest Telecom Solutions", "industry": "Telecom", "phone": "(317) 555-0812", "email": "sales@midwesttelecom.com", "contact_person": "Greg Phillips", "status": "prospect"},
+    {"company_name": "Cascade Environmental", "industry": "Environmental Services", "phone": "(503) 555-0923", "email": "info@cascadeenvironmental.com", "contact_person": "Jennifer Olsen", "status": "active"},
+    {"company_name": "Blue Ridge Education", "industry": "Education", "phone": "(828) 555-0135", "email": "admissions@blueridgeedu.com", "contact_person": "Dr. William Hayes", "status": "lead"},
+    {"company_name": "Chesapeake Marine Services", "industry": "Maritime", "phone": "(410) 555-0246", "email": "fleet@chesapeakemarine.com", "contact_person": "Captain James Cole", "status": "inactive"},
+    {"company_name": "Prairie Wind Renewables", "industry": "Energy", "phone": "(316) 555-0357", "email": "projects@prairiewind.com", "contact_person": "Rebecca Foster", "status": "prospect"},
+    {"company_name": "Bayou Foods International", "industry": "Food & Beverage", "phone": "(504) 555-0468", "email": "orders@bayoufoods.com", "contact_person": "Antoine Dubois", "status": "active"},
+    {"company_name": "Rockpoint Mining Corp", "industry": "Mining", "phone": "(801) 555-0579", "email": "operations@rockpointmining.com", "contact_person": "Dan Mitchell", "status": "inactive"},
+    {"company_name": "Apex Aerospace Defense", "industry": "Aerospace", "phone": "(256) 555-0681", "email": "contracts@apexaerospace.com", "contact_person": "Col. Robert Shaw", "status": "active"},
+    {"company_name": "Metro Retail Holdings", "industry": "Retail", "phone": "(404) 555-0792", "email": "partnerships@metroretail.com", "contact_person": "Tamara Williams", "status": "lead"},
+]
+
+EU_CLIENTS = [
+    {"company_name": "Müller Maschinenbau GmbH", "industry": "Manufacturing", "phone": "+49 89 555 0123", "email": "info@muller-maschinenbau.de", "contact_person": "Hans Müller", "status": "active"},
+    {"company_name": "Durand et Fils SA", "industry": "Food & Beverage", "phone": "+33 1 55 55 0234", "email": "contact@durandetfils.fr", "contact_person": "Pierre Durand", "status": "prospect"},
+    {"company_name": "Van der Berg Shipping BV", "industry": "Transport & Logistics", "phone": "+31 10 555 0345", "email": "logistics@vanderbergshipping.nl", "contact_person": "Jan van der Berg", "status": "active"},
+    {"company_name": "García & Asociados SL", "industry": "Legal Services", "phone": "+34 91 555 0456", "email": "legal@garciaasociados.es", "contact_person": "Carmen García", "status": "lead"},
+    {"company_name": "Rossi Costruzioni SpA", "industry": "Construction", "phone": "+39 02 555 0567", "email": "progetti@rossicostruzioni.it", "contact_person": "Marco Rossi", "status": "prospect"},
+    {"company_name": "Schmidt Pharma AG", "industry": "Pharma", "phone": "+49 30 555 0678", "email": "forschung@schmidtpharma.de", "contact_person": "Dr. Katrin Schmidt", "status": "active"},
+    {"company_name": "Lefèvre Consulting SARL", "industry": "Management Consulting", "phone": "+33 4 55 55 0789", "email": "conseil@lefevreconsulting.fr", "contact_person": "Jean-Pierre Lefèvre", "status": "active"},
+    {"company_name": "De Groot Technology BV", "industry": "Technology", "phone": "+31 20 555 0891", "email": "info@degroottechnology.nl", "contact_person": "Willem de Groot", "status": "lead"},
+    {"company_name": "Fernández Media SL", "industry": "Media", "phone": "+34 93 555 0912", "email": "prensa@fernandezmedia.es", "contact_person": "Ana Fernández", "status": "prospect"},
+    {"company_name": "Bianchi Design Studio SRL", "industry": "Marketing", "phone": "+39 06 555 0134", "email": "studio@bianchidesign.it", "contact_person": "Giulia Bianchi", "status": "active"},
+    {"company_name": "Weber Energie GmbH", "industry": "Energy", "phone": "+49 40 555 0245", "email": "vertrieb@weberenergie.de", "contact_person": "Thomas Weber", "status": "prospect"},
+    {"company_name": "Moreau Insurance SA", "industry": "Insurance", "phone": "+33 3 55 55 0356", "email": "assurance@moreauinsurance.fr", "contact_person": "Claire Moreau", "status": "lead"},
+    {"company_name": "Bakker Agriculture BV", "industry": "Agriculture", "phone": "+31 30 555 0467", "email": "info@bakkeragri.nl", "contact_person": "Pieter Bakker", "status": "active"},
+    {"company_name": "López Telecom SA", "industry": "Telecom", "phone": "+34 91 555 0578", "email": "ventas@lopeztelecom.es", "contact_person": "Diego López", "status": "inactive"},
+    {"company_name": "Conti Financial Services SpA", "industry": "Financial Services", "phone": "+39 02 555 0689", "email": "investimenti@contifinancial.it", "contact_person": "Alessandro Conti", "status": "active"},
+    {"company_name": "Fischer Automotive GmbH", "industry": "Automotive", "phone": "+49 711 555 0791", "email": "fleet@fischerautomotive.de", "contact_person": "Stefan Fischer", "status": "lead"},
+    {"company_name": "Bernard Hotels Group SA", "industry": "Hospitality", "phone": "+33 1 55 55 0812", "email": "reservations@bernardhotels.fr", "contact_person": "Marie Bernard", "status": "active"},
+    {"company_name": "Visser Environmental BV", "industry": "Environmental Services", "phone": "+31 70 555 0923", "email": "milieu@visserenvironmental.nl", "contact_person": "Lisa Visser", "status": "prospect"},
+    {"company_name": "Martínez Education SL", "industry": "Education", "phone": "+34 91 555 0135", "email": "academia@martinezeducation.es", "contact_person": "Prof. Rafael Martínez", "status": "inactive"},
+    {"company_name": "Romano Healthcare SRL", "industry": "Healthcare", "phone": "+39 06 555 0246", "email": "clinica@romanohealthcare.it", "contact_person": "Dr. Laura Romano", "status": "active"},
+    {"company_name": "Braun Defence Systems GmbH", "industry": "Defence", "phone": "+49 89 555 0357", "email": "vertrag@braundefence.de", "contact_person": "Markus Braun", "status": "prospect"},
+    {"company_name": "Petit Retail Group SA", "industry": "Retail", "phone": "+33 4 55 55 0468", "email": "achats@petitretail.fr", "contact_person": "Sophie Petit", "status": "lead"},
+    {"company_name": "Jansen Recruitment BV", "industry": "Human Resources", "phone": "+31 20 555 0579", "email": "vacatures@jansenrecruitment.nl", "contact_person": "Anna Jansen", "status": "active"},
+    {"company_name": "Ruiz Construction SA", "industry": "Construction", "phone": "+34 93 555 0681", "email": "obras@ruizconstruction.es", "contact_person": "Miguel Ruiz", "status": "inactive"},
+    {"company_name": "Colombo Aerospace SRL", "industry": "Aerospace", "phone": "+39 011 555 0792", "email": "aviazione@colomboaerospace.it", "contact_person": "Paolo Colombo", "status": "lead"},
+]
+
+OTHER_CLIENTS = [
+    {"company_name": "Southern Cross Mining", "industry": "Mining", "phone": "+61 2 5550 0123", "email": "ops@southerncrossmining.com.au", "contact_person": "Bruce Campbell", "status": "active"},
+    {"company_name": "Sakura Technologies KK", "industry": "Technology", "phone": "+81 3 5550 0234", "email": "info@sakuratech.co.jp", "contact_person": "Yuki Tanaka", "status": "prospect"},
+    {"company_name": "Emirates Trading LLC", "industry": "Import/Export", "phone": "+971 4 555 0345", "email": "trade@emiratestrading.ae", "contact_person": "Ahmed Al-Rashid", "status": "active"},
+    {"company_name": "Maple Leaf Consulting", "industry": "Management Consulting", "phone": "+1 416 555 0456", "email": "engage@mapleleafconsulting.ca", "contact_person": "Sarah Thompson", "status": "lead"},
+    {"company_name": "Tata Digital Solutions", "industry": "Technology", "phone": "+91 22 5550 0567", "email": "solutions@tatadigital.in", "contact_person": "Rajesh Patel", "status": "active"},
+    {"company_name": "Seoul Semiconductor Corp", "industry": "Manufacturing", "phone": "+82 2 5550 0678", "email": "sales@seoulsemi.kr", "contact_person": "Min-Jun Park", "status": "prospect"},
+    {"company_name": "Kiwi Agricultural Exports", "industry": "Agriculture", "phone": "+64 9 555 0789", "email": "exports@kiwiagri.co.nz", "contact_person": "James Wilson", "status": "lead"},
+    {"company_name": "Nordic Shipping AS", "industry": "Transport & Logistics", "phone": "+47 22 55 50 89", "email": "freight@nordicshipping.no", "contact_person": "Erik Johansen", "status": "inactive"},
+    {"company_name": "São Paulo Pharma Ltda", "industry": "Pharma", "phone": "+55 11 5550 0912", "email": "pesquisa@saopaulopharma.com.br", "contact_person": "Dr. Ana Silva", "status": "active"},
+    {"company_name": "Cape Town Renewables", "industry": "Energy", "phone": "+27 21 555 0134", "email": "projects@capetownrenewables.co.za", "contact_person": "Thabo Molefe", "status": "prospect"},
+]
+
+ALL_CLIENTS = UK_CLIENTS + US_CLIENTS + EU_CLIENTS + OTHER_CLIENTS
+
+# Status distribution: 35 active, 25 prospect, 25 lead, 15 inactive
+STATUS_SEQUENCE = (
+    ["active"] * 35 + ["prospect"] * 25 + ["lead"] * 25 + ["inactive"] * 15
+)
+
+INDUSTRIES = [
+    "Technology", "Manufacturing", "Financial Services", "Healthcare", "Legal Services",
+    "Transport & Logistics", "Real Estate", "Hospitality", "Agriculture", "Engineering",
+    "Marketing", "Management Consulting", "Education", "Retail", "Energy",
+    "Telecom", "Pharma", "Construction", "Media", "Insurance",
+    "Environmental Services", "Food & Beverage", "Automotive", "Mining",
+    "Aerospace", "Defence", "Human Resources", "Import/Export", "Maritime",
+]
+
+# ---------------------------------------------------------------------------
+# Contact templates
+# ---------------------------------------------------------------------------
+
+CONTACT_TEMPLATES = {
+    "email": [
+        {"notes": "Sent introductory email about our services to {person}.", "outcome": "No reply yet — will follow up in two weeks"},
+        {"notes": "Emailed updated pricing proposal to {person} at {company}.", "outcome": "{person} acknowledged receipt, under review"},
+        {"notes": "Sent case studies and portfolio to {person}.", "outcome": "Forwarded to decision-making team"},
+        {"notes": "Follow-up email to {person} on previous conversation.", "outcome": "Requested more details on implementation"},
+        {"notes": "Sent quarterly newsletter to {person}.", "outcome": "Opened and clicked through to services page"},
+        {"notes": "Responded to inbound enquiry from {person} at {company}.", "outcome": "Sent detailed service overview"},
+        {"notes": "Emailed contract draft to {person} for review.", "outcome": "Under legal review, response expected next week"},
+        {"notes": "Sent meeting summary and action items to {person}.", "outcome": "{person} confirmed receipt and next steps"},
+        {"notes": "Shared industry report with {person} as discussed.", "outcome": "Appreciated — wants to discuss findings"},
+        {"notes": "Cold email introducing consultancy services to {person}.", "outcome": "Auto-reply — out of office until next week"},
+    ],
+    "phone": [
+        {"notes": "Exploratory call with {person} about potential engagement.", "outcome": "Interested but busy — call back next month"},
+        {"notes": "Follow-up call to {person} on sent proposal.", "outcome": "Positive feedback, scheduling next meeting"},
+        {"notes": "Cold call to {company} reception about our services.", "outcome": "Gatekeeper took message for {person}"},
+        {"notes": "Discussed project timeline and deliverables with {person}.", "outcome": "Agreed on key milestones"},
+        {"notes": "Called {person} to check on contract status.", "outcome": "Awaiting board approval, decision next week"},
+        {"notes": "Quick call with {person} about upcoming requirements.", "outcome": "Wants formal proposal by end of month"},
+        {"notes": "Year-end check-in call with {person} at {company}.", "outcome": "Reviewing budget for next year — follow up in January"},
+        {"notes": "Weekly check-in with {person} — project on track.", "outcome": "Next deliverable due in two weeks"},
+    ],
+    "meeting": [
+        {"notes": "Initial consultation at {company} offices.", "outcome": "Strong interest in full service package"},
+        {"notes": "Site visit at {company} to assess current processes.", "outcome": "Identified key improvement areas"},
+        {"notes": "Board presentation on proposed engagement.", "outcome": "Board approved budget — proceeding to contract"},
+        {"notes": "Strategy workshop with {person} and team.", "outcome": "Defined scope and timeline for pilot project"},
+        {"notes": "Coffee meeting with {person} to discuss partnership.", "outcome": "Agreed to formal proposal stage"},
+        {"notes": "Quarterly review meeting with {person}.", "outcome": "On track — discussing extension of engagement"},
+    ],
+}
+
+FOLLOWUP_TEMPLATES = [
+    "Follow up on email to {person}",
+    "Send proposal to {person} at {company}",
+    "Chase {person} on contract status",
+    "Schedule meeting with {person}",
+    "Prepare presentation materials for {company}",
+    "Send case studies to {person}",
+    "Call {person} about project timeline",
+    "Review deliverables for {company}",
+    "Send pricing update to {person}",
+    "Arrange site visit at {company}",
+    "Prepare quarterly review for {person}",
+    "Follow up on board decision at {company}",
+    "Draft engagement terms for {person}",
+    "Send project update to {person}",
+    "Check in with {person} on progress",
+    "Prepare kick-off materials for {company}",
+    "Follow up on referral from {person}",
+    "Send contract amendments to {person}",
+    "Discuss budget allocation with {person}",
+    "Year-end review with {person} at {company}",
+]
+
+# ---------------------------------------------------------------------------
+# Address templates by region
+# ---------------------------------------------------------------------------
+
+UK_ADDRESSES = [
+    "14 Temple Row, Birmingham B2 5JR",
+    "Unit 7, MediaCity, Salford M50 2HE",
+    "Brightwell Works, Aston Road, Birmingham B6 4RJ",
+    "3rd Floor, 25 Canada Square, London E14 5LQ",
+    "Redcastle House, Princess Street, Manchester M1 4HB",
+    "47 Queen Street, Edinburgh EH2 3NH",
+    "12 Park Place, Cardiff CF10 3DQ",
+    "Suite 3, Victoria House, Leeds LS1 5AB",
+    "8 Broad Street, Bristol BS1 2HG",
+    "Unit 15, Innovation Park, Cambridge CB4 0DS",
+    "6 Waterloo Street, Glasgow G2 6AY",
+    "The Gatehouse, 1 Castle Street, Nottingham NG1 6AA",
+    "22 High Street, Guildford GU1 3EL",
+    "10 Albert Dock, Liverpool L3 4AF",
+    "5 Deansgate, Manchester M3 4EN",
+]
+
+US_ADDRESSES = [
+    "100 Market Street, Suite 300, San Francisco, CA 94105",
+    "233 S Wacker Drive, Floor 42, Chicago, IL 60606",
+    "1 World Trade Center, Suite 8500, New York, NY 10007",
+    "1600 Amphitheatre Parkway, Mountain View, CA 94043",
+    "200 Congress Avenue, Suite 1400, Austin, TX 78701",
+    "500 Boylston Street, Boston, MA 02116",
+    "1000 Wilshire Blvd, Suite 1500, Los Angeles, CA 90017",
+    "2000 Pennsylvania Avenue NW, Washington, DC 20006",
+]
+
+EU_ADDRESSES = [
+    "Maximilianstraße 35, 80539 München, Germany",
+    "12 Rue de la Paix, 75002 Paris, France",
+    "Keizersgracht 555, 1017 DR Amsterdam, Netherlands",
+    "Paseo de la Castellana 89, 28046 Madrid, Spain",
+    "Via Monte Napoleone 8, 20121 Milano, Italy",
+    "Friedrichstraße 43-45, 10117 Berlin, Germany",
+    "23 Avenue des Champs-Élysées, 75008 Paris, France",
+    "Herengracht 182, 1016 BR Amsterdam, Netherlands",
+]
+
+OTHER_ADDRESSES = [
+    "Level 12, 1 Macquarie Place, Sydney NSW 2000, Australia",
+    "Marunouchi 1-9-1, Chiyoda-ku, Tokyo 100-0005, Japan",
+    "Dubai Internet City, Building 1, Dubai, UAE",
+    "200 Bay Street, Suite 3000, Toronto, ON M5J 2J1, Canada",
+    "Bandra Kurla Complex, Mumbai 400051, India",
+    "Gangnam-gu, Teheran-ro 521, Seoul 06164, South Korea",
+]
+
+LINKEDIN_TEMPLATES = [
+    "https://linkedin.com/company/{slug}",
+]
+
+TWITTER_TEMPLATES = [
+    "https://x.com/{slug}",
+]
+
+
+# ---------------------------------------------------------------------------
+# Helper functions
+# ---------------------------------------------------------------------------
+
+def _company_slug(company_name):
+    """Convert company name to URL slug."""
+    slug = company_name.lower()
+    for ch in "&.,/'":
+        slug = slug.replace(ch, "")
+    return slug.replace(" ", "-").replace("--", "-").strip("-")
+
+
+def _random_date_in_range(start, end):
+    """Return a random date between start and end (inclusive)."""
+    delta = (end - start).days
+    return start + timedelta(days=random.randint(0, max(0, delta)))
+
+
+def _random_time():
+    """Return a random business-hours time (9:00-16:00)."""
+    hour = random.randint(9, 16)
+    minute = random.choice([0, 15, 30, 45])
+    return time(hour, minute)
+
+
+def generate_contacts_for_client(client_obj, client_data, today):
+    """Generate contact records for a single client."""
+    status = client_data["status"]
+    person = client_data["contact_person"]
+    company = client_data["company_name"]
+
+    count_map = {"active": (5, 7), "prospect": (4, 6), "lead": (3, 4), "inactive": (2, 3)}
+    lo, hi = count_map.get(status, (3, 4))
+    n = random.randint(lo, hi)
+
+    # Date range: April 2025 – March 2026
+    start_date = date(2025, 4, 1)
+    end_date = date(2026, 3, 31)
+
+    contacts = []
+    for _ in range(n):
+        # Type mix: ~40% email, 35% phone, 25% meeting
+        r = random.random()
+        if r < 0.40:
+            ctype = "email"
+        elif r < 0.75:
+            ctype = "phone"
+        else:
+            ctype = "meeting"
+
+        template = random.choice(CONTACT_TEMPLATES[ctype])
+        notes = template["notes"].format(person=person, company=company)
+        outcome = template["outcome"].format(person=person, company=company)
+
+        contact_date = _random_date_in_range(start_date, end_date)
+        contact_time = _random_time() if ctype in ("phone", "meeting") else None
+
+        c = Contact(
+            client_id=client_obj.id,
+            user_id=client_obj.user_id,
+            date=contact_date,
+            time=contact_time,
+            contact_type=ctype,
+            notes=notes,
+            outcome=outcome,
+        )
+        contacts.append(c)
+
+    return contacts
+
+
+def generate_followups_for_client(client_obj, client_data, today):
+    """Generate follow-up records for a single client."""
+    status = client_data["status"]
+    person = client_data["contact_person"]
+    company = client_data["company_name"]
+
+    count_map = {"active": (5, 7), "prospect": (4, 6), "lead": (3, 5), "inactive": (2, 3)}
+    lo, hi = count_map.get(status, (3, 4))
+    n = random.randint(lo, hi)
+
+    # Date range: Oct 2025 – Dec 2026, weighted toward current quarter
+    start_date = date(2025, 10, 1)
+    end_date = date(2026, 12, 31)
+
+    # Weight toward current quarter: 50% within ±45 days of today, 50% spread
+    followups = []
+    for _ in range(n):
+        if random.random() < 0.5:
+            # Near current date
+            near_start = today - timedelta(days=45)
+            near_end = today + timedelta(days=45)
+            if near_start < start_date:
+                near_start = start_date
+            if near_end > end_date:
+                near_end = end_date
+            due = _random_date_in_range(near_start, near_end)
+        else:
+            due = _random_date_in_range(start_date, end_date)
+
+        completed = due < today
+
+        # Priority: 25% high, 45% medium, 30% low
+        r = random.random()
+        if r < 0.25:
+            priority = "high"
+        elif r < 0.70:
+            priority = "medium"
+        else:
+            priority = "low"
+
+        template = random.choice(FOLLOWUP_TEMPLATES)
+        notes = template.format(person=person, company=company)
+
+        # ~40% get a due_time
+        due_time = _random_time() if random.random() < 0.4 else None
+
+        fu = FollowUp(
+            client_id=client_obj.id,
+            user_id=client_obj.user_id,
+            due_date=due,
+            due_time=due_time,
+            priority=priority,
+            notes=notes,
+            completed=completed,
+        )
+        followups.append(fu)
+
+    return followups
+
+
+def generate_custom_fields_for_client(client_obj, client_data, idx, custom_field_defs):
+    """Generate custom field values for a single client."""
+    values = []
+    addr_def = custom_field_defs[0]     # Address
+    linkedin_def = custom_field_defs[1]  # LinkedIn
+    twitter_def = custom_field_defs[2]   # Twitter / X
+
+    slug = _company_slug(client_data["company_name"])
+
+    # Determine region
+    if idx < 40:
+        region = "uk"
+    elif idx < 65:
+        region = "us"
+    elif idx < 90:
+        region = "eu"
+    else:
+        region = "other"
+
+    # ~40% get address
+    if random.random() < 0.40:
+        if region == "uk":
+            addr = random.choice(UK_ADDRESSES)
+        elif region == "us":
+            addr = random.choice(US_ADDRESSES)
+        elif region == "eu":
+            addr = random.choice(EU_ADDRESSES)
+        else:
+            addr = random.choice(OTHER_ADDRESSES)
+        values.append(CustomFieldValue(
+            definition_id=addr_def.id, client_id=client_obj.id, value=addr
+        ))
+
+    # ~25% get LinkedIn
+    if random.random() < 0.25:
+        values.append(CustomFieldValue(
+            definition_id=linkedin_def.id,
+            client_id=client_obj.id,
+            value=f"https://linkedin.com/company/{slug}",
+        ))
+
+    # ~15% get Twitter/X
+    if random.random() < 0.15:
+        values.append(CustomFieldValue(
+            definition_id=twitter_def.id,
+            client_id=client_obj.id,
+            value=f"https://x.com/{slug}",
+        ))
+
+    return values
+
+
+# ---------------------------------------------------------------------------
+# Main seed function
+# ---------------------------------------------------------------------------
 
 def seed():
+    random.seed(42)
+
     app = create_app()
     with app.app_context():
         # Clear existing data
@@ -46,11 +491,6 @@ def seed():
             db.session.add(u)
             users.append(u)
         db.session.flush()
-
-        # Ownership mapping: clients 0-4 → admin, 5-9 → manager1, 10-12 → user1, 13-14 → user2
-        owner_map = (
-            [users[0]] * 5 + [users[1]] * 5 + [users[2]] * 3 + [users[3]] * 2
-        )
 
         # --- Interaction Types ---
         for i, it_data in enumerate(DEFAULT_INTERACTION_TYPES):
@@ -86,1088 +526,63 @@ def seed():
             db.session.add(QuickFunction(sort_order=i, **qf_data))
         db.session.flush()
 
-        # --- Clients (15 total) ---
-        clients = [
-            # 0 – Thornbury & Associates
-            Client(
-                company_name="Thornbury & Associates",
-                industry="Legal Services",
-                phone="020 7946 0123",
-                email="info@thornbury.co.uk",
-                contact_person="Margaret Thornbury",
-                status="active",
-            ),
-            # 1 – Brightwell Manufacturing
-            Client(
-                company_name="Brightwell Manufacturing",
-                industry="Manufacturing",
-                phone="0121 496 0456",
-                email="sales@brightwell.co.uk",
-                contact_person="David Brightwell",
-                status="active",
-            ),
-            # 2 – Hargreaves Digital
-            Client(
-                company_name="Hargreaves Digital",
-                industry="Technology",
-                phone="0161 946 0789",
-                email="hello@hargreaves.digital",
-                contact_person="Sarah Hargreaves",
-                status="active",
-            ),
-            # 3 – Pemberton Logistics
-            Client(
-                company_name="Pemberton Logistics",
-                industry="Transport & Logistics",
-                phone="0113 496 0321",
-                email="enquiries@pemberton-logistics.co.uk",
-                contact_person="James Pemberton",
-                status="prospect",
-            ),
-            # 4 – Ashworth Catering
-            Client(
-                company_name="Ashworth Catering",
-                industry="Hospitality",
-                phone="0151 946 0654",
-                email="bookings@ashworthcatering.co.uk",
-                contact_person="Emily Ashworth",
-                status="prospect",
-            ),
-            # 5 – Cartwright Properties
-            Client(
-                company_name="Cartwright Properties",
-                industry="Real Estate",
-                phone="020 7946 0987",
-                email="lettings@cartwrightprops.co.uk",
-                contact_person="Richard Cartwright",
-                status="lead",
-            ),
-            # 6 – Fenwick & Cole Accountants
-            Client(
-                company_name="Fenwick & Cole Accountants",
-                industry="Financial Services",
-                phone="0117 496 0147",
-                email="partners@fenwickcole.co.uk",
-                contact_person="Helen Fenwick",
-                status="lead",
-            ),
-            # 7 – Greenfield Organics
-            Client(
-                company_name="Greenfield Organics",
-                industry="Agriculture",
-                phone="0115 496 0258",
-                email="farm@greenfieldorganics.co.uk",
-                contact_person="Tom Greenfield",
-                status="active",
-            ),
-            # 8 – Mercer Engineering
-            Client(
-                company_name="Mercer Engineering",
-                industry="Engineering",
-                phone="0114 496 0369",
-                email="projects@mercer-eng.co.uk",
-                contact_person="Alan Mercer",
-                status="inactive",
-            ),
-            # 9 – Whitmore Creative Agency
-            Client(
-                company_name="Whitmore Creative Agency",
-                industry="Marketing",
-                phone="020 7946 0741",
-                email="studio@whitmorecreative.co.uk",
-                contact_person="Lucy Whitmore",
-                status="lead",
-            ),
-            # 10 – Oakbridge Consulting
-            Client(
-                company_name="Oakbridge Consulting",
-                industry="Management Consulting",
-                phone="020 7946 0852",
-                email="enquiries@oakbridgeconsulting.co.uk",
-                contact_person="William Oakbridge",
-                status="active",
-            ),
-            # 11 – Redcastle Healthcare
-            Client(
-                company_name="Redcastle Healthcare",
-                industry="Healthcare",
-                phone="0161 946 0963",
-                email="admin@redcastlehealthcare.co.uk",
-                contact_person="Priya Sharma",
-                status="active",
-            ),
-            # 12 – Longmere Education
-            Client(
-                company_name="Longmere Education",
-                industry="Education",
-                phone="0113 496 0174",
-                email="info@longmere-education.co.uk",
-                contact_person="Catherine Longmere",
-                status="prospect",
-            ),
-            # 13 – Stonewick Retail Group
-            Client(
-                company_name="Stonewick Retail Group",
-                industry="Retail",
-                phone="0151 946 0285",
-                email="buyers@stonewickretail.co.uk",
-                contact_person="Daniel Stonewick",
-                status="lead",
-            ),
-            # 14 – Blackwood Energy Solutions
-            Client(
-                company_name="Blackwood Energy Solutions",
-                industry="Energy",
-                phone="0131 496 0396",
-                email="projects@blackwoodenergy.co.uk",
-                contact_person="Fiona Blackwood",
-                status="inactive",
-            ),
-        ]
-        # Assign ownership to clients
-        for i, client in enumerate(clients):
-            client.user_id = owner_map[i].id
+        # --- Clients (100 total) ---
+        # User assignment: admin=30, manager1=30, user1=25, user2=15
+        user_assignment = (
+            [users[0]] * 30 + [users[1]] * 30 + [users[2]] * 25 + [users[3]] * 15
+        )
 
-        db.session.add_all(clients)
-        db.session.flush()
-
-        # Helper: get owner for a client by index
-        def _owner_id(client_idx):
-            return owner_map[client_idx].id
+        # Shuffle status sequence with fixed seed (already seeded)
+        statuses = STATUS_SEQUENCE[:]
+        random.shuffle(statuses)
 
         today = date.today()
+        clients = []
+        all_contacts = []
+        all_followups = []
+        all_custom_values = []
 
-        # --- Contacts (interaction history) — full year Apr 2025 – Mar 2026 ---
-        contacts = [
-            # ── April 2025 — cold outreach & early prospecting ──
-            Contact(client_id=clients[0].id, date=date(2025, 4, 2),
-                    contact_type="email",
-                    notes="Cold email introducing our consultancy services to Margaret.",
-                    outcome="No reply — will follow up in two weeks"),
-            Contact(client_id=clients[1].id, date=date(2025, 4, 7),
-                    time=time(9, 30),
-                    contact_type="phone",
-                    notes="Cold call to Brightwell reception about manufacturing support.",
-                    outcome="Gatekeeper took message for David Brightwell"),
-            Contact(client_id=clients[5].id, date=date(2025, 4, 10),
-                    contact_type="email",
-                    notes="Sent brochure about commercial property management services.",
-                    outcome="Auto-reply — out of office"),
-            Contact(client_id=clients[9].id, date=date(2025, 4, 14),
-                    time=time(11, 0),
-                    contact_type="phone",
-                    notes="Exploratory call with Lucy about potential branding work.",
-                    outcome="Interested but busy with current campaign — call back June"),
-            Contact(client_id=clients[3].id, date=date(2025, 4, 18),
-                    contact_type="email",
-                    notes="Sent logistics consultancy overview to Pemberton.",
-                    outcome="James replied asking for case studies"),
-            Contact(client_id=clients[7].id, date=date(2025, 4, 22),
-                    time=time(14, 0),
-                    contact_type="phone",
-                    notes="Initial enquiry about organic supply chain consulting.",
-                    outcome="Tom interested — wants to discuss after harvest season"),
-            Contact(client_id=clients[13].id, date=date(2025, 4, 25),
-                    contact_type="email",
-                    notes="Cold email to Stonewick Retail about inventory optimisation.",
-                    outcome="No response"),
-            Contact(client_id=clients[6].id, date=date(2025, 4, 28),
-                    contact_type="email",
-                    notes="Sent intro email about accounting software integration services.",
-                    outcome="Helen replied — not a priority right now"),
+        for idx, client_data in enumerate(ALL_CLIENTS):
+            # Override status with balanced distribution
+            data = dict(client_data)
+            data["status"] = statuses[idx]
 
-            # ── May 2025 — follow-ups on April outreach ──
-            Contact(client_id=clients[0].id, date=date(2025, 5, 5),
-                    time=time(10, 0),
-                    contact_type="phone",
-                    notes="Follow-up call to Margaret on April email.",
-                    outcome="Interested in learning more — send detailed proposal"),
-            Contact(client_id=clients[3].id, date=date(2025, 5, 8),
-                    contact_type="email",
-                    notes="Sent three logistics case studies as requested.",
-                    outcome="James forwarded to operations director"),
-            Contact(client_id=clients[1].id, date=date(2025, 5, 12),
-                    time=time(15, 0),
-                    contact_type="phone",
-                    notes="Second attempt — reached David Brightwell directly.",
-                    outcome="Agreed to a site visit in June"),
-            Contact(client_id=clients[14].id, date=date(2025, 5, 15),
-                    contact_type="email",
-                    notes="Cold email to Blackwood Energy about sustainability consulting.",
-                    outcome="Fiona replied — keen to explore after Q2 close"),
-            Contact(client_id=clients[4].id, date=date(2025, 5, 19),
-                    time=time(11, 30),
-                    contact_type="phone",
-                    notes="Met Emily Ashworth at hospitality networking event.",
-                    outcome="Exchanged details, will send catering partnership proposal"),
-            Contact(client_id=clients[11].id, date=date(2025, 5, 22),
-                    contact_type="email",
-                    notes="Referral from NHS contact — sent introductory pack to Redcastle.",
-                    outcome="Priya acknowledged receipt, will review in June"),
-            Contact(client_id=clients[10].id, date=date(2025, 5, 28),
-                    contact_type="email",
-                    notes="Sent introductory email about management consulting services.",
-                    outcome="William's PA replied — scheduling a call"),
+            client = Client(
+                company_name=data["company_name"],
+                industry=data["industry"],
+                phone=data["phone"],
+                email=data["email"],
+                contact_person=data["contact_person"],
+                status=data["status"],
+                user_id=user_assignment[idx].id,
+            )
+            db.session.add(client)
+            db.session.flush()
+            clients.append(client)
 
-            # ── June 2025 — first meetings, warming up pipeline ──
-            Contact(client_id=clients[0].id, date=date(2025, 6, 3),
-                    contact_type="email",
-                    notes="Sent detailed proposal document for legal consultancy support.",
-                    outcome="Margaret said she'll review over the weekend"),
-            Contact(client_id=clients[1].id, date=date(2025, 6, 10),
-                    time=time(10, 0),
-                    contact_type="meeting",
-                    notes="Factory site visit at Brightwell Works, Aston Road.",
-                    outcome="Identified production line bottlenecks — drafting assessment"),
-            Contact(client_id=clients[4].id, date=date(2025, 6, 12),
-                    contact_type="email",
-                    notes="Sent catering partnership proposal to Emily.",
-                    outcome="Under review — needs sign-off from business partner"),
-            Contact(client_id=clients[10].id, date=date(2025, 6, 16),
-                    time=time(14, 30),
-                    contact_type="phone",
-                    notes="Introductory call with William Oakbridge.",
-                    outcome="Very engaged — wants a face-to-face in autumn"),
-            Contact(client_id=clients[12].id, date=date(2025, 6, 18),
-                    contact_type="email",
-                    notes="Cold email about education sector consulting to Longmere.",
-                    outcome="Catherine interested — asked for more info"),
-            Contact(client_id=clients[5].id, date=date(2025, 6, 20),
-                    time=time(9, 0),
-                    contact_type="phone",
-                    notes="Follow-up on April brochure — Richard now available.",
-                    outcome="Wants to discuss three specific commercial properties"),
-            Contact(client_id=clients[8].id, date=date(2025, 6, 24),
-                    contact_type="email",
-                    notes="Sent introductory email about engineering project management.",
-                    outcome="Alan replied — has a project starting in September"),
-            Contact(client_id=clients[3].id, date=date(2025, 6, 27),
-                    time=time(16, 0),
-                    contact_type="phone",
-                    notes="Call with Pemberton operations director about case studies.",
-                    outcome="Positive — wants pricing for logistics audit"),
+            # Generate contacts
+            contacts = generate_contacts_for_client(client, data, today)
+            all_contacts.extend(contacts)
 
-            # ── July 2025 — summer activity, some slowdown ──
-            Contact(client_id=clients[0].id, date=date(2025, 7, 3),
-                    time=time(11, 0),
-                    contact_type="phone",
-                    notes="Margaret reviewed proposal — has questions on scope.",
-                    outcome="Scheduled face-to-face for October"),
-            Contact(client_id=clients[0].id, date=date(2025, 7, 15),
-                    contact_type="email",
-                    notes="Sent revised scope document addressing Margaret's questions.",
-                    outcome="Auto-reply — out of office until August"),
-            Contact(client_id=clients[1].id, date=date(2025, 7, 8),
-                    contact_type="email",
-                    notes="Sent production line assessment report to David.",
-                    outcome="David forwarded to technical director for review"),
-            Contact(client_id=clients[3].id, date=date(2025, 7, 14),
-                    contact_type="email",
-                    notes="Sent logistics audit pricing proposal.",
-                    outcome="James said he'll discuss with board after summer"),
-            Contact(client_id=clients[12].id, date=date(2025, 7, 18),
-                    time=time(10, 0),
-                    contact_type="phone",
-                    notes="Call with Catherine about education consulting needs.",
-                    outcome="Wants to explore curriculum review project — call back September"),
-            Contact(client_id=clients[7].id, date=date(2025, 7, 22),
-                    contact_type="email",
-                    notes="Follow-up email to Tom about supply chain consulting.",
-                    outcome="Tom busy with harvest — revisit in October"),
-            Contact(client_id=clients[14].id, date=date(2025, 7, 28),
-                    time=time(15, 0),
-                    contact_type="phone",
-                    notes="Follow-up call with Fiona about energy consulting.",
-                    outcome="Budget confirmed — wants a formal proposal in September"),
+            # Generate follow-ups
+            followups = generate_followups_for_client(client, data, today)
+            all_followups.extend(followups)
 
-            # ── August 2025 — quieter month, maintaining contact ──
-            Contact(client_id=clients[1].id, date=date(2025, 8, 5),
-                    time=time(10, 0),
-                    contact_type="phone",
-                    notes="Chased technical director on assessment report feedback.",
-                    outcome="Gatekeeper took message, promised callback"),
-            Contact(client_id=clients[5].id, date=date(2025, 8, 11),
-                    contact_type="email",
-                    notes="Sent property portfolio with three commercial unit details.",
-                    outcome="Richard reviewing — will respond after holiday"),
-            Contact(client_id=clients[8].id, date=date(2025, 8, 18),
-                    time=time(14, 0),
-                    contact_type="phone",
-                    notes="Call with Alan about September engineering project.",
-                    outcome="Confirmed start date — wants site visit first"),
-            Contact(client_id=clients[8].id, date=date(2025, 8, 22),
-                    contact_type="email",
-                    notes="Sent introductory pack about engineering project management.",
-                    outcome="Replied with interest in autumn projects"),
-            Contact(client_id=clients[9].id, date=date(2025, 8, 25),
-                    time=time(11, 0),
-                    contact_type="phone",
-                    notes="Reconnected with Lucy about branding project.",
-                    outcome="Campaign finished — ready to discuss in September"),
-            Contact(client_id=clients[6].id, date=date(2025, 8, 28),
-                    contact_type="email",
-                    notes="Follow-up on accounting integration — new tax year approaching.",
-                    outcome="Helen more receptive — asked for a meeting in October"),
+            # Generate custom field values
+            custom_values = generate_custom_fields_for_client(client, data, idx, custom_field_defs)
+            all_custom_values.extend(custom_values)
 
-            # ── September 2025 — autumn ramp-up ──
-            Contact(client_id=clients[14].id, date=date(2025, 9, 2),
-                    contact_type="email",
-                    notes="Sent formal energy audit proposal to Fiona.",
-                    outcome="Under internal review"),
-            Contact(client_id=clients[9].id, date=date(2025, 9, 5),
-                    time=time(10, 0),
-                    contact_type="meeting",
-                    notes="Creative brief meeting at Whitmore studio in Shoreditch.",
-                    outcome="Agreed brand refresh scope — awaiting budget approval"),
-            Contact(client_id=clients[8].id, date=date(2025, 9, 8),
-                    time=time(9, 0),
-                    contact_type="meeting",
-                    notes="Site visit at Mercer Engineering works in Sheffield.",
-                    outcome="Identified inefficiencies in project handover process"),
-            Contact(client_id=clients[14].id, date=date(2025, 9, 10),
-                    time=time(14, 30),
-                    contact_type="phone",
-                    notes="Chased Fiona on energy audit proposal status.",
-                    outcome="Asked to send overview brochure to CEO"),
-            Contact(client_id=clients[12].id, date=date(2025, 9, 15),
-                    contact_type="email",
-                    notes="Sent curriculum review case studies to Catherine.",
-                    outcome="Shared with academic board"),
-            Contact(client_id=clients[1].id, date=date(2025, 9, 18),
-                    time=time(11, 0),
-                    contact_type="phone",
-                    notes="Finally reached technical director — positive on assessment.",
-                    outcome="Board meeting scheduled for October to discuss"),
-            Contact(client_id=clients[11].id, date=date(2025, 9, 22),
-                    time=time(15, 0),
-                    contact_type="phone",
-                    notes="Follow-up call with Priya — reviewed our introductory pack.",
-                    outcome="Wants to discuss compliance consulting in detail"),
-            Contact(client_id=clients[13].id, date=date(2025, 9, 25),
-                    contact_type="email",
-                    notes="Second outreach to Stonewick Retail about inventory systems.",
-                    outcome="Daniel replied — has budget for Q1 2026 project"),
-
-            # ── October 2025 — face-to-face meetings, deepening relationships ──
-            Contact(client_id=clients[0].id, date=date(2025, 10, 3),
-                    time=time(11, 0),
-                    contact_type="meeting",
-                    notes="First face-to-face meeting at their Birmingham office.",
-                    outcome="Strong interest — requested formal proposal"),
-            Contact(client_id=clients[1].id, date=date(2025, 10, 10),
-                    time=time(14, 0),
-                    contact_type="meeting",
-                    notes="Board presentation on production line upgrade proposal.",
-                    outcome="Board approved budget — technical director to lead"),
-            Contact(client_id=clients[1].id, date=date(2025, 10, 18),
-                    contact_type="email",
-                    notes="Sent detailed proposal for production line assessment.",
-                    outcome="Forwarded to technical director for sign-off"),
-            Contact(client_id=clients[6].id, date=date(2025, 10, 8),
-                    time=time(12, 0),
-                    contact_type="meeting",
-                    notes="Meeting with Helen at Fenwick & Cole Bristol office.",
-                    outcome="Interested in cloud accounting migration — needs partner approval"),
-            Contact(client_id=clients[5].id, date=date(2025, 10, 15),
-                    time=time(10, 0),
-                    contact_type="phone",
-                    notes="Richard back from holiday — discussed commercial units.",
-                    outcome="Wants to view two units in person"),
-            Contact(client_id=clients[9].id, date=date(2025, 10, 20),
-                    contact_type="email",
-                    notes="Sent brand refresh proposal and pricing to Lucy.",
-                    outcome="Budget approved — wants to start in January"),
-            Contact(client_id=clients[3].id, date=date(2025, 10, 24),
-                    time=time(15, 30),
-                    contact_type="phone",
-                    notes="James called back — board interested in logistics audit.",
-                    outcome="Wants to schedule site visit in November"),
-            Contact(client_id=clients[7].id, date=date(2025, 10, 28),
-                    time=time(9, 0),
-                    contact_type="phone",
-                    notes="Post-harvest call with Tom about supply chain.",
-                    outcome="Ready to discuss seasonal contract terms"),
-
-            # ── November 2025 — proposals and negotiations ──
-            Contact(client_id=clients[0].id, date=date(2025, 11, 4),
-                    contact_type="email",
-                    notes="Sent formal consultancy proposal to Margaret.",
-                    outcome="Under review — meeting scheduled for December"),
-            Contact(client_id=clients[8].id, date=date(2025, 11, 7),
-                    time=time(9, 30),
-                    contact_type="meeting",
-                    notes="On-site visit to review current engineering workflows.",
-                    outcome="Identified three areas for improvement"),
-            Contact(client_id=clients[3].id, date=date(2025, 11, 12),
-                    time=time(10, 0),
-                    contact_type="meeting",
-                    notes="Logistics site visit at Pemberton depot in Leeds.",
-                    outcome="Major inefficiencies found in routing — strong case for engagement"),
-            Contact(client_id=clients[10].id, date=date(2025, 11, 17),
-                    time=time(14, 0),
-                    contact_type="meeting",
-                    notes="Coffee meeting with William at a Canary Wharf cafe.",
-                    outcome="Agreed to a January strategy workshop"),
-            Contact(client_id=clients[10].id, date=date(2025, 11, 20),
-                    contact_type="email",
-                    notes="Referral from industry contact — sent introductory pack.",
-                    outcome="William replied, keen to discuss in new year"),
-            Contact(client_id=clients[7].id, date=date(2025, 11, 21),
-                    contact_type="email",
-                    notes="Sent draft seasonal supply contract to Tom.",
-                    outcome="Reviewing with his farm manager"),
-            Contact(client_id=clients[11].id, date=date(2025, 11, 25),
-                    time=time(11, 0),
-                    contact_type="meeting",
-                    notes="Met Priya at healthcare industry conference in Manchester.",
-                    outcome="Detailed discussion — wants formal compliance proposal"),
-            Contact(client_id=clients[13].id, date=date(2025, 11, 28),
-                    time=time(16, 0),
-                    contact_type="phone",
-                    notes="Call with Daniel about Q1 inventory project timeline.",
-                    outcome="Confirmed January kick-off if proposal approved"),
-
-            # ── December 2025 — year-end wrap-up, holiday period ──
-            Contact(client_id=clients[0].id, date=date(2025, 12, 1),
-                    time=time(14, 0),
-                    contact_type="meeting",
-                    notes="Review meeting with Margaret — went through proposal detail.",
-                    outcome="Verbal agreement — formal sign-off in January"),
-            Contact(client_id=clients[14].id, date=date(2025, 12, 2),
-                    contact_type="email",
-                    notes="Sent energy audit proposal document.",
-                    outcome="Under internal review"),
-            Contact(client_id=clients[1].id, date=date(2025, 12, 5),
-                    contact_type="email",
-                    notes="Sent contract for production line assessment engagement.",
-                    outcome="David signed — project starts February"),
-            Contact(client_id=clients[6].id, date=date(2025, 12, 8),
-                    time=time(10, 0),
-                    contact_type="phone",
-                    notes="Partner approval for accounting migration — Helen confirmed.",
-                    outcome="Starting scoping work in March"),
-            Contact(client_id=clients[11].id, date=date(2025, 12, 15),
-                    time=time(10, 0),
-                    contact_type="phone",
-                    notes="Initial call with Priya about healthcare compliance consulting.",
-                    outcome="Scheduled January meeting"),
-            Contact(client_id=clients[8].id, date=date(2025, 12, 10),
-                    contact_type="email",
-                    notes="Sent improvement recommendations report to Alan.",
-                    outcome="Alan grateful — wants to discuss implementation in new year"),
-            Contact(client_id=clients[4].id, date=date(2025, 12, 12),
-                    time=time(11, 0),
-                    contact_type="phone",
-                    notes="Year-end check-in with Emily about catering partnership.",
-                    outcome="Still under review — events director on leave until January"),
-            Contact(client_id=clients[5].id, date=date(2025, 12, 18),
-                    contact_type="email",
-                    notes="Sent updated property valuations for two commercial units.",
-                    outcome="Richard reviewing over Christmas"),
-            Contact(client_id=clients[12].id, date=date(2025, 12, 19),
-                    time=time(15, 0),
-                    contact_type="phone",
-                    notes="Quick call with Catherine — academic board approved exploration.",
-                    outcome="Formal meeting planned for February"),
-
-            # ── January 2026 — new year, active engagement ──
-            Contact(client_id=clients[0].id, date=date(2026, 1, 6),
-                    contact_type="email",
-                    notes="Sent contract for legal consultancy support engagement.",
-                    outcome="Margaret signed — project kicks off February"),
-            Contact(client_id=clients[10].id, date=date(2026, 1, 8),
-                    time=time(14, 0),
-                    contact_type="meeting",
-                    notes="Strategy workshop at Oakbridge offices in Canary Wharf.",
-                    outcome="Agreed on scope for pilot project"),
-            Contact(client_id=clients[9].id, date=date(2026, 1, 13),
-                    time=time(10, 0),
-                    contact_type="meeting",
-                    notes="Brand refresh kick-off meeting at Whitmore studio.",
-                    outcome="Defined brand guidelines, colour palette, and timeline"),
-            Contact(client_id=clients[11].id, date=date(2026, 1, 22),
-                    time=time(11, 30),
-                    contact_type="meeting",
-                    notes="Presented compliance audit framework to leadership team.",
-                    outcome="Requested pricing for full audit"),
-            Contact(client_id=clients[7].id, date=date(2026, 1, 15),
-                    time=time(9, 0),
-                    contact_type="phone",
-                    notes="Contract terms discussion with Tom and his farm manager.",
-                    outcome="Minor amendments requested — near final"),
-            Contact(client_id=clients[13].id, date=date(2026, 1, 20),
-                    time=time(15, 0),
-                    contact_type="phone",
-                    notes="Daniel confirmed Q1 budget allocation for inventory project.",
-                    outcome="Wants detailed implementation plan by February"),
-            Contact(client_id=clients[12].id, date=date(2026, 1, 28),
-                    contact_type="email",
-                    notes="Responded to inbound enquiry about education sector consulting.",
-                    outcome="Sent case studies from similar projects"),
-            Contact(client_id=clients[3].id, date=date(2026, 1, 30),
-                    contact_type="email",
-                    notes="Sent logistics audit engagement terms to James.",
-                    outcome="Under review by operations director"),
-
-            # ── February 2026 — deep engagement, demos, negotiations ──
-            Contact(client_id=clients[0].id, date=date(2026, 2, 3),
-                    time=time(10, 0),
-                    contact_type="meeting",
-                    notes="Project kick-off meeting with Margaret and her team.",
-                    outcome="Workstream leads assigned, weekly check-ins agreed"),
-            Contact(client_id=clients[1].id, date=date(2026, 2, 5),
-                    time=time(9, 0),
-                    contact_type="meeting",
-                    notes="Production line assessment kick-off at Brightwell Works.",
-                    outcome="Baseline measurements taken, two-week data collection started"),
-            Contact(client_id=clients[13].id, date=date(2026, 2, 5),
-                    time=time(15, 0),
-                    contact_type="phone",
-                    notes="Exploratory call about retail inventory optimisation.",
-                    outcome="Interested — wants to see ROI projections"),
-            Contact(client_id=clients[12].id, date=date(2026, 2, 14),
-                    time=time(10, 0),
-                    contact_type="meeting",
-                    notes="Campus tour and requirements gathering session.",
-                    outcome="Detailed brief received, preparing proposal"),
-            Contact(client_id=clients[9].id, date=date(2026, 2, 10),
-                    contact_type="email",
-                    notes="Shared first round of brand concepts with Lucy.",
-                    outcome="Very positive — minor tweaks requested"),
-            Contact(client_id=clients[4].id, date=date(2026, 2, 12),
-                    time=time(14, 0),
-                    contact_type="meeting",
-                    notes="Meeting with Emily and events director about partnership.",
-                    outcome="Agreed terms in principle — contract being drafted"),
-            Contact(client_id=clients[4].id, date=date(2026, 2, 20),
-                    contact_type="email",
-                    notes="Sent revised catering partnership terms after feedback.",
-                    outcome="Under review by their events director"),
-            Contact(client_id=clients[11].id, date=date(2026, 2, 18),
-                    contact_type="email",
-                    notes="Sent compliance audit pricing and detailed scope document.",
-                    outcome="Priya discussing with finance team"),
-            Contact(client_id=clients[7].id, date=date(2026, 2, 24),
-                    contact_type="email",
-                    notes="Sent final contract with agreed amendments to Tom.",
-                    outcome="Signed and returned — supply partnership active"),
-            Contact(client_id=clients[14].id, date=date(2026, 2, 26),
-                    time=time(11, 0),
-                    contact_type="phone",
-                    notes="Fiona called — energy audit approved by CEO.",
-                    outcome="Starting in April, wants project plan"),
-
-            # ── March 2026 — current month, high activity ──
-            Contact(client_id=clients[0].id, date=date(2026, 3, 2),
-                    time=time(10, 30),
-                    contact_type="phone",
-                    notes="Weekly check-in with Margaret — project on track.",
-                    outcome="First deliverable due next week"),
-            Contact(client_id=clients[13].id, date=date(2026, 3, 1),
-                    contact_type="email",
-                    notes="Sent ROI projections and implementation timeline.",
-                    outcome="Shared with board, decision expected April"),
-            Contact(client_id=clients[5].id, date=date(2026, 3, 3),
-                    time=time(14, 0),
-                    contact_type="meeting",
-                    notes="Property viewing with Richard — two commercial units.",
-                    outcome="Interested in Unit B, wants lease terms"),
-            Contact(client_id=clients[5].id, date=date(2026, 3, 5),
-                    time=time(9, 0),
-                    contact_type="phone",
-                    notes="Followed up on property portfolio — discussed specific listings.",
-                    outcome="Narrowed interest to three commercial units"),
-            Contact(client_id=clients[6].id, date=date(2026, 3, 6),
-                    time=time(10, 0),
-                    contact_type="meeting",
-                    notes="Accounting migration scoping workshop at Fenwick & Cole.",
-                    outcome="Defined data migration plan and timeline"),
-            Contact(client_id=clients[6].id, date=date(2026, 3, 8),
-                    contact_type="email",
-                    notes="Sent accounting software integration proposal.",
-                    outcome="Helen forwarded to IT department for review"),
-            Contact(client_id=clients[1].id, date=date(2026, 3, 9),
-                    time=time(11, 0),
-                    contact_type="meeting",
-                    notes="Mid-project review at Brightwell — data collection complete.",
-                    outcome="Preliminary findings positive, full report due March 20"),
-            Contact(client_id=clients[9].id, date=date(2026, 3, 7),
-                    contact_type="email",
-                    notes="Delivered final brand package to Lucy.",
-                    outcome="Lucy delighted — wants to discuss website redesign next"),
-            Contact(client_id=clients[10].id, date=date(2026, 3, 10),
-                    time=time(14, 0),
-                    contact_type="meeting",
-                    notes="Pilot project progress review with William.",
-                    outcome="On track — discussing extension to full engagement"),
-            Contact(client_id=clients[3].id, date=date(2026, 3, 11),
-                    time=time(16, 0),
-                    contact_type="phone",
-                    notes="James confirmed logistics audit engagement — signed contract.",
-                    outcome="Starting April, site access arranged"),
-            Contact(client_id=clients[11].id, date=date(2026, 3, 12),
-                    time=time(10, 0),
-                    contact_type="phone",
-                    notes="Priya confirmed compliance audit budget approved.",
-                    outcome="Project start May, preparing team"),
-
-            # ── Recent relative contacts (this week) ──
-            Contact(client_id=clients[0].id, date=today - timedelta(days=2),
-                    time=time(10, 30),
-                    contact_type="phone", notes="Discussed quarterly review requirements.",
-                    outcome="Agreed to send proposal by Friday"),
-            Contact(client_id=clients[0].id, date=today - timedelta(days=10),
-                    time=time(14, 0),
-                    contact_type="meeting", notes="Initial consultation at their offices.",
-                    outcome="Interested in full service package"),
-            Contact(client_id=clients[1].id, date=today - timedelta(days=1),
-                    contact_type="email", notes="Sent revised quotation for production line upgrade.",
-                    outcome="Awaiting board approval"),
-            Contact(client_id=clients[2].id, date=today,
-                    time=time(11, 0),
-                    contact_type="meeting", notes="Software demo at their Salford office.",
-                    outcome="Very positive — scheduling trial period"),
-            Contact(client_id=clients[2].id, date=today - timedelta(days=14),
-                    contact_type="email", notes="Sent introductory brochure and case studies.",
-                    outcome="Requested a demo"),
-            Contact(client_id=clients[7].id, date=today - timedelta(days=4),
-                    time=time(13, 45),
-                    contact_type="phone", notes="Discussed seasonal supply contract.",
-                    outcome="Drafting contract terms"),
-        ]
-        # Assign ownership to contacts based on their client's owner
-        for c in contacts:
-            c.user_id = db.session.get(Client, c.client_id).user_id
-        db.session.add_all(contacts)
-
-        # --- Follow-ups — full year Apr 2025 – Mar 2026 + future pipeline ---
-        followups = [
-            # ── April 2025 — early pipeline follow-ups (all completed) ──
-            FollowUp(client_id=clients[0].id, due_date=date(2025, 4, 9),
-                      priority="medium",
-                      notes="Follow up on cold email to Margaret",
-                      completed=True),
-            FollowUp(client_id=clients[1].id, due_date=date(2025, 4, 14),
-                      priority="medium",
-                      notes="Chase callback from Brightwell reception",
-                      completed=True),
-            FollowUp(client_id=clients[5].id, due_date=date(2025, 4, 17),
-                      priority="low",
-                      notes="Resend property brochure when Richard back from leave",
-                      completed=True),
-            FollowUp(client_id=clients[3].id, due_date=date(2025, 4, 25),
-                      priority="medium",
-                      notes="Send logistics case studies to James Pemberton",
-                      completed=True),
-
-            # ── May 2025 ──
-            FollowUp(client_id=clients[0].id, due_date=date(2025, 5, 8),
-                      priority="high",
-                      notes="Send detailed consultancy proposal to Margaret",
-                      completed=True),
-            FollowUp(client_id=clients[1].id, due_date=date(2025, 5, 15),
-                      priority="high",
-                      notes="Arrange factory site visit with David Brightwell",
-                      completed=True),
-            FollowUp(client_id=clients[4].id, due_date=date(2025, 5, 22),
-                      priority="medium",
-                      notes="Send catering partnership proposal to Emily",
-                      completed=True),
-            FollowUp(client_id=clients[14].id, due_date=date(2025, 5, 28),
-                      priority="low",
-                      notes="Follow up on sustainability consulting email to Fiona",
-                      completed=True),
-
-            # ── June 2025 ──
-            FollowUp(client_id=clients[0].id, due_date=date(2025, 6, 6),
-                      priority="medium",
-                      notes="Chase Margaret on proposal review",
-                      completed=True),
-            FollowUp(client_id=clients[1].id, due_date=date(2025, 6, 16),
-                      priority="high",
-                      notes="Send production line assessment report after site visit",
-                      completed=True),
-            FollowUp(client_id=clients[10].id, due_date=date(2025, 6, 20),
-                      priority="medium",
-                      notes="Schedule introductory call with William Oakbridge",
-                      completed=True),
-            FollowUp(client_id=clients[8].id, due_date=date(2025, 6, 27),
-                      priority="low",
-                      notes="Follow up with Alan about September engineering project",
-                      completed=True),
-            FollowUp(client_id=clients[12].id, due_date=date(2025, 6, 25),
-                      priority="low",
-                      notes="Send education consulting info to Catherine",
-                      completed=True),
-
-            # ── July 2025 ──
-            FollowUp(client_id=clients[0].id, due_date=date(2025, 7, 7),
-                      priority="medium",
-                      notes="Discuss scope questions with Margaret before she leaves",
-                      completed=True),
-            FollowUp(client_id=clients[3].id, due_date=date(2025, 7, 18),
-                      priority="medium",
-                      notes="Send logistics audit pricing to James",
-                      completed=True),
-            FollowUp(client_id=clients[14].id, due_date=date(2025, 7, 30),
-                      priority="medium",
-                      notes="Call Fiona about energy audit proposal",
-                      completed=True),
-            FollowUp(client_id=clients[12].id, due_date=date(2025, 7, 22),
-                      priority="low",
-                      notes="Follow up with Catherine about curriculum review",
-                      completed=True),
-
-            # ── August 2025 ──
-            FollowUp(client_id=clients[1].id, due_date=date(2025, 8, 8),
-                      priority="medium",
-                      notes="Chase technical director on assessment report",
-                      completed=True),
-            FollowUp(client_id=clients[5].id, due_date=date(2025, 8, 14),
-                      priority="low",
-                      notes="Send property portfolio to Richard",
-                      completed=True),
-            FollowUp(client_id=clients[8].id, due_date=date(2025, 8, 20),
-                      priority="medium",
-                      notes="Arrange site visit with Alan before September project",
-                      completed=True),
-            FollowUp(client_id=clients[9].id, due_date=date(2025, 8, 28),
-                      priority="low",
-                      notes="Reconnect with Lucy about branding project",
-                      completed=True),
-
-            # ── September 2025 ──
-            FollowUp(client_id=clients[14].id, due_date=date(2025, 9, 5),
-                      priority="high",
-                      notes="Send formal energy audit proposal to Fiona",
-                      completed=True),
-            FollowUp(client_id=clients[9].id, due_date=date(2025, 9, 8),
-                      priority="high",
-                      notes="Creative brief meeting with Lucy at Whitmore studio",
-                      completed=True),
-            FollowUp(client_id=clients[8].id, due_date=date(2025, 9, 10),
-                      priority="high",
-                      notes="Complete site visit at Mercer Engineering",
-                      completed=True),
-            FollowUp(client_id=clients[1].id, due_date=date(2025, 9, 22),
-                      priority="medium",
-                      notes="Follow up with technical director on assessment",
-                      completed=True),
-            FollowUp(client_id=clients[11].id, due_date=date(2025, 9, 25),
-                      priority="medium",
-                      notes="Call Priya about compliance consulting interest",
-                      completed=True),
-            FollowUp(client_id=clients[13].id, due_date=date(2025, 9, 29),
-                      priority="low",
-                      notes="Follow up second outreach to Daniel at Stonewick",
-                      completed=True),
-
-            # ── October 2025 ──
-            FollowUp(client_id=clients[0].id, due_date=date(2025, 10, 1),
-                      priority="high",
-                      notes="Prepare for face-to-face meeting with Margaret",
-                      completed=True),
-            FollowUp(client_id=clients[0].id, due_date=date(2025, 10, 10),
-                      priority="high",
-                      notes="Prepare formal proposal after initial meeting",
-                      completed=True),
-            FollowUp(client_id=clients[1].id, due_date=date(2025, 10, 15),
-                      priority="high",
-                      notes="Prepare board presentation for Brightwell",
-                      completed=True),
-            FollowUp(client_id=clients[6].id, due_date=date(2025, 10, 10),
-                      priority="medium",
-                      notes="Schedule meeting with Helen at Fenwick & Cole",
-                      completed=True),
-            FollowUp(client_id=clients[5].id, due_date=date(2025, 10, 18),
-                      priority="low",
-                      notes="Follow up with Richard on commercial units",
-                      completed=True),
-            FollowUp(client_id=clients[9].id, due_date=date(2025, 10, 22),
-                      priority="medium",
-                      notes="Send brand refresh proposal and pricing to Lucy",
-                      completed=True),
-            FollowUp(client_id=clients[7].id, due_date=date(2025, 10, 30),
-                      priority="medium",
-                      notes="Call Tom about supply chain contract terms",
-                      completed=True),
-
-            # ── November 2025 ──
-            FollowUp(client_id=clients[0].id, due_date=date(2025, 11, 6),
-                      priority="high",
-                      notes="Send formal consultancy proposal to Margaret",
-                      completed=True),
-            FollowUp(client_id=clients[1].id, due_date=date(2025, 11, 1),
-                      priority="medium",
-                      notes="Chase technical director on proposal feedback",
-                      completed=True),
-            FollowUp(client_id=clients[8].id, due_date=date(2025, 11, 15),
-                      priority="high",
-                      notes="Send improvement recommendations after site visit",
-                      completed=True),
-            FollowUp(client_id=clients[3].id, due_date=date(2025, 11, 14),
-                      priority="high",
-                      notes="Arrange logistics site visit at Pemberton depot",
-                      completed=True),
-            FollowUp(client_id=clients[10].id, due_date=date(2025, 11, 19),
-                      priority="medium",
-                      notes="Coffee meeting with William Oakbridge",
-                      completed=True),
-            FollowUp(client_id=clients[11].id, due_date=date(2025, 11, 27),
-                      priority="medium",
-                      notes="Prepare formal compliance proposal for Priya",
-                      completed=True),
-            FollowUp(client_id=clients[13].id, due_date=date(2025, 11, 30),
-                      priority="low",
-                      notes="Call Daniel about Q1 inventory project timeline",
-                      completed=True),
-
-            # ── December 2025 ──
-            FollowUp(client_id=clients[0].id, due_date=date(2025, 12, 3),
-                      priority="high",
-                      notes="Review meeting with Margaret — go through proposal detail",
-                      completed=True),
-            FollowUp(client_id=clients[1].id, due_date=date(2025, 12, 8),
-                      priority="medium",
-                      notes="Send contract for production line assessment",
-                      completed=True),
-            FollowUp(client_id=clients[6].id, due_date=date(2025, 12, 10),
-                      priority="medium",
-                      notes="Chase Helen on partner approval for accounting migration",
-                      completed=True),
-            FollowUp(client_id=clients[8].id, due_date=date(2025, 12, 12),
-                      priority="medium",
-                      notes="Send improvement recommendations report to Alan",
-                      completed=True),
-            FollowUp(client_id=clients[12].id, due_date=date(2025, 12, 22),
-                      priority="low",
-                      notes="Quick call with Catherine before Christmas",
-                      completed=True),
-            FollowUp(client_id=clients[4].id, due_date=date(2025, 12, 15),
-                      priority="low",
-                      notes="Year-end check-in with Emily on catering partnership",
-                      completed=True),
-
-            # ── January 2026 ──
-            FollowUp(client_id=clients[0].id, due_date=date(2026, 1, 7),
-                      priority="high",
-                      notes="Send contract for legal consultancy engagement",
-                      completed=True),
-            FollowUp(client_id=clients[10].id, due_date=date(2026, 1, 5),
-                      priority="medium",
-                      notes="Schedule new year strategy workshop with William",
-                      completed=True),
-            FollowUp(client_id=clients[9].id, due_date=date(2026, 1, 12),
-                      priority="high",
-                      notes="Brand refresh kick-off meeting with Lucy",
-                      completed=True),
-            FollowUp(client_id=clients[11].id, due_date=date(2026, 1, 20),
-                      priority="high",
-                      notes="Prepare compliance audit presentation for leadership",
-                      completed=True),
-            FollowUp(client_id=clients[7].id, due_date=date(2026, 1, 16),
-                      priority="medium",
-                      notes="Finalise seasonal contract amendments with Tom",
-                      completed=True),
-            FollowUp(client_id=clients[13].id, due_date=date(2026, 1, 22),
-                      priority="medium",
-                      notes="Send implementation plan to Daniel at Stonewick",
-                      completed=True),
-            FollowUp(client_id=clients[3].id, due_date=date(2026, 1, 31),
-                      priority="medium",
-                      notes="Send logistics audit engagement terms to James",
-                      completed=True),
-
-            # ── February 2026 ──
-            FollowUp(client_id=clients[0].id, due_date=date(2026, 2, 2),
-                      priority="high",
-                      notes="Prepare project kick-off materials for Margaret",
-                      completed=True),
-            FollowUp(client_id=clients[1].id, due_date=date(2026, 2, 4),
-                      priority="high",
-                      notes="Prepare assessment kick-off at Brightwell Works",
-                      completed=True),
-            FollowUp(client_id=clients[14].id, due_date=date(2026, 2, 1),
-                      priority="low",
-                      notes="Follow up on energy audit proposal status",
-                      completed=True),
-            FollowUp(client_id=clients[9].id, due_date=date(2026, 2, 12),
-                      priority="medium",
-                      notes="Share first round brand concepts with Lucy",
-                      completed=True),
-            FollowUp(client_id=clients[4].id, due_date=date(2026, 2, 14),
-                      priority="medium",
-                      notes="Meeting with Emily and events director",
-                      completed=True),
-            FollowUp(client_id=clients[11].id, due_date=date(2026, 2, 20),
-                      priority="medium",
-                      notes="Send compliance audit pricing and scope document",
-                      completed=True),
-            FollowUp(client_id=clients[7].id, due_date=date(2026, 2, 25),
-                      priority="low",
-                      notes="Send final contract to Tom — supply partnership",
-                      completed=True),
-            FollowUp(client_id=clients[14].id, due_date=date(2026, 2, 28),
-                      priority="medium",
-                      notes="Discuss energy audit project plan with Fiona",
-                      completed=True),
-
-            # ── March 2026 — current month mix of completed + pending ──
-            FollowUp(client_id=clients[0].id, due_date=today - timedelta(days=5),
-                      priority="high", notes="Prepare meeting summary notes",
-                      completed=True),
-            FollowUp(client_id=clients[2].id, due_date=today - timedelta(days=2),
-                      priority="medium", notes="Send demo recording link",
-                      completed=True),
-            FollowUp(client_id=clients[8].id, due_date=today - timedelta(days=7),
-                      priority="low", notes="Check if reactivation is possible",
-                      completed=True),
-            FollowUp(client_id=clients[6].id, due_date=date(2026, 3, 4),
-                      priority="high",
-                      notes="Prepare scoping workshop materials for Fenwick & Cole",
-                      completed=True),
-            FollowUp(client_id=clients[9].id, due_date=date(2026, 3, 6),
-                      priority="high",
-                      notes="Deliver final brand package to Lucy",
-                      completed=True),
-            FollowUp(client_id=clients[1].id, due_date=date(2026, 3, 8),
-                      priority="high",
-                      notes="Prepare mid-project review presentation for Brightwell",
-                      completed=True),
-
-            # Current and upcoming
-            FollowUp(client_id=clients[0].id, due_date=today,
-                      due_time=time(9, 0),
-                      priority="high", notes="Send quarterly review proposal"),
-            FollowUp(client_id=clients[1].id, due_date=today,
-                      due_time=time(14, 30),
-                      priority="medium", notes="Chase board decision on quotation"),
-            FollowUp(client_id=clients[2].id, due_date=today + timedelta(days=2),
-                      due_time=time(10, 0),
-                      priority="high", notes="Set up trial period access"),
-            FollowUp(client_id=clients[3].id, due_date=today + timedelta(days=1),
-                      priority="medium", notes="Send detailed logistics brochure"),
-            FollowUp(client_id=clients[4].id, due_date=today + timedelta(days=3),
-                      due_time=time(11, 30),
-                      priority="low", notes="Prepare for scheduled call"),
-            FollowUp(client_id=clients[5].id, due_date=today - timedelta(days=1),
-                      due_time=time(9, 0),
-                      priority="high", notes="Send property portfolio — promised yesterday"),
-            FollowUp(client_id=clients[6].id, due_date=today - timedelta(days=3),
-                      priority="medium", notes="Follow up from conference meeting"),
-            FollowUp(client_id=clients[7].id, due_date=today + timedelta(days=5),
-                      priority="low", notes="Finalise seasonal contract terms"),
-            FollowUp(client_id=clients[9].id, due_date=today + timedelta(days=7),
-                      due_time=time(16, 0),
-                      priority="medium", notes="Follow up on budget confirmation"),
-
-            # ── Q2 2026 (Apr–Jun) — near-term pipeline ──
-            FollowUp(client_id=clients[14].id, due_date=date(2026, 4, 1),
-                      due_time=time(9, 0),
-                      priority="high",
-                      notes="Energy audit project kick-off with Fiona"),
-            FollowUp(client_id=clients[3].id, due_date=date(2026, 4, 6),
-                      due_time=time(10, 0),
-                      priority="high",
-                      notes="Logistics audit kick-off at Pemberton depot"),
-            FollowUp(client_id=clients[10].id, due_date=date(2026, 4, 7),
-                      due_time=time(10, 0),
-                      priority="high",
-                      notes="Kick-off meeting for pilot consulting project"),
-            FollowUp(client_id=clients[13].id, due_date=date(2026, 4, 15),
-                      priority="high",
-                      notes="Chase board decision on retail optimisation proposal"),
-            FollowUp(client_id=clients[0].id, due_date=date(2026, 4, 20),
-                      priority="medium",
-                      notes="First deliverable review with Margaret"),
-            FollowUp(client_id=clients[11].id, due_date=date(2026, 5, 1),
-                      due_time=time(14, 0),
-                      priority="medium",
-                      notes="Compliance audit project kick-off with Priya"),
-            FollowUp(client_id=clients[12].id, due_date=date(2026, 5, 20),
-                      priority="medium",
-                      notes="Submit education consulting proposal"),
-            FollowUp(client_id=clients[9].id, due_date=date(2026, 5, 15),
-                      priority="medium",
-                      notes="Website redesign scoping with Lucy"),
-            FollowUp(client_id=clients[1].id, due_date=date(2026, 6, 1),
-                      priority="medium",
-                      notes="Final assessment report delivery to Brightwell"),
-            FollowUp(client_id=clients[4].id, due_date=date(2026, 6, 10),
-                      priority="low",
-                      notes="Follow up on catering partnership terms review"),
-            FollowUp(client_id=clients[6].id, due_date=date(2026, 6, 15),
-                      priority="medium",
-                      notes="Accounting migration phase one completion review"),
-
-            # ── Q3 2026 (Jul–Sep) — mid-term planning ──
-            FollowUp(client_id=clients[0].id, due_date=date(2026, 7, 1),
-                      priority="medium",
-                      notes="Schedule mid-year service review with Margaret"),
-            FollowUp(client_id=clients[7].id, due_date=date(2026, 8, 15),
-                      priority="medium",
-                      notes="Renegotiate autumn supply contract terms"),
-            FollowUp(client_id=clients[1].id, due_date=date(2026, 9, 1),
-                      priority="low",
-                      notes="Check in on production line upgrade progress"),
-            FollowUp(client_id=clients[14].id, due_date=date(2026, 9, 20),
-                      priority="low",
-                      notes="Re-engage about energy audit — new financial year"),
-
-            # ── Q4 2026 (Oct–Dec) — long-term reminders ──
-            FollowUp(client_id=clients[10].id, due_date=date(2026, 10, 5),
-                      priority="low",
-                      notes="Review pilot project outcomes and plan phase two"),
-            FollowUp(client_id=clients[2].id, due_date=date(2026, 11, 1),
-                      priority="low",
-                      notes="Annual contract renewal discussion with Sarah"),
-            FollowUp(client_id=clients[3].id, due_date=date(2026, 12, 1),
-                      priority="low",
-                      notes="Year-end review — assess logistics partnership value"),
-        ]
-        # Assign ownership to follow-ups based on their client's owner
-        for fu in followups:
-            fu.user_id = db.session.get(Client, fu.client_id).user_id
-        db.session.add_all(followups)
-
-        # --- Custom Field Values (sample data for some clients) ---
-        addr_def = custom_field_defs[0]     # Address
-        linkedin_def = custom_field_defs[1]  # LinkedIn
-        twitter_def = custom_field_defs[2]   # Twitter / X
-
-        custom_values = [
-            # Existing values
-            CustomFieldValue(definition_id=addr_def.id, client_id=clients[0].id,
-                             value="14 Temple Row, Birmingham B2 5JR"),
-            CustomFieldValue(definition_id=addr_def.id, client_id=clients[2].id,
-                             value="Unit 7, MediaCity, Salford M50 2HE"),
-            CustomFieldValue(definition_id=linkedin_def.id, client_id=clients[2].id,
-                             value="https://linkedin.com/company/hargreaves-digital"),
-            # New values
-            CustomFieldValue(definition_id=addr_def.id, client_id=clients[1].id,
-                             value="Brightwell Works, Aston Road, Birmingham B6 4RJ"),
-            CustomFieldValue(definition_id=addr_def.id, client_id=clients[10].id,
-                             value="3rd Floor, 25 Canada Square, London E14 5LQ"),
-            CustomFieldValue(definition_id=addr_def.id, client_id=clients[11].id,
-                             value="Redcastle House, Princess Street, Manchester M1 4HB"),
-            CustomFieldValue(definition_id=linkedin_def.id, client_id=clients[10].id,
-                             value="https://linkedin.com/company/oakbridge-consulting"),
-            CustomFieldValue(definition_id=linkedin_def.id, client_id=clients[0].id,
-                             value="https://linkedin.com/company/thornbury-associates"),
-            CustomFieldValue(definition_id=twitter_def.id, client_id=clients[9].id,
-                             value="https://x.com/whitmorecreative"),
-            CustomFieldValue(definition_id=twitter_def.id, client_id=clients[2].id,
-                             value="https://x.com/hargreavesdigital"),
-            CustomFieldValue(definition_id=twitter_def.id, client_id=clients[11].id,
-                             value="https://x.com/redcastlehealth"),
-        ]
-        db.session.add_all(custom_values)
+        db.session.add_all(all_contacts)
+        db.session.add_all(all_followups)
+        db.session.add_all(all_custom_values)
 
         db.session.commit()
         print(
-            f"Seeded {len(users)} users, {len(clients)} clients, {len(contacts)} contacts, "
-            f"{len(followups)} follow-ups, {len(custom_values)} custom field values, "
-            f"{len(attachment_cats)} attachment categories, {len(attachment_tags)} attachment tags."
+            f"Seeded {len(users)} users, {len(clients)} clients, "
+            f"{len(all_contacts)} contacts, {len(all_followups)} follow-ups, "
+            f"{len(all_custom_values)} custom field values, "
+            f"{len(attachment_cats)} attachment categories, "
+            f"{len(attachment_tags)} attachment tags."
         )
 
 
