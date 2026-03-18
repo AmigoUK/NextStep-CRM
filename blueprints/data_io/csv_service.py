@@ -17,7 +17,7 @@ from models.user import User
 # ── Column definitions ─────────────────────────────────────────
 
 COMPANY_COLUMNS = [
-    "company_name", "industry", "phone", "email",
+    "internal_id", "company_name", "industry", "phone", "email",
     "contact_person", "status", "owner",
 ]
 
@@ -183,6 +183,7 @@ def _export_companies(output):
 
     for c, owner_username in companies:
         row = {
+            "internal_id": c.internal_id or "",
             "company_name": c.company_name,
             "industry": c.industry or "",
             "phone": c.phone or "",
@@ -265,6 +266,7 @@ def generate_template_csv(entity_type):
         columns = COMPANY_COLUMNS + cf_labels
         examples = [
             {
+                "internal_id": "ACME-001",
                 "company_name": "Acme Ltd",
                 "industry": "Manufacturing",
                 "phone": "+44 20 7946 0958",
@@ -274,6 +276,7 @@ def generate_template_csv(entity_type):
                 "owner": "",
             },
             {
+                "internal_id": "GLOB-002",
                 "company_name": "Globex Corp",
                 "industry": "Technology",
                 "phone": "+44 20 7946 0959",
@@ -420,8 +423,11 @@ def _import_companies(headers, rows, current_user):
             if key and key.lower() in cf_label_to_id and val and val.strip():
                 cf_values[cf_label_to_id[key.lower()]] = val.strip()
 
+        internal_id = row.get("internal_id", "").strip() or None
+
         valid_records.append({
             "company_name": company_name,
+            "internal_id": internal_id,
             "industry": row.get("industry", "").strip(),
             "phone": row.get("phone", "").strip(),
             "email": email,

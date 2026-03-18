@@ -6,6 +6,21 @@
                value="{{ company.company_name if company else '' }}" required>
     </div>
 
+    <!-- Internal ID — editable for admin, read-only for others -->
+    <div class="mb-3">
+        <label for="internal_id" class="form-label"><i class="bi bi-hash me-1"></i>Internal ID</label>
+        {% if current_user.has_role_at_least("admin") %}
+        <input type="text" class="form-control" id="internal_id" name="internal_id" maxlength="50"
+               value="{{ company.internal_id if company and company.internal_id else '' }}"
+               placeholder="e.g. ACME-001">
+        <small class="text-muted">Unique identifier for cross-system integration</small>
+        {% else %}
+        <input type="text" class="form-control" id="internal_id"
+               value="{{ company.internal_id if company and company.internal_id else '—' }}" disabled>
+        <small class="text-muted">Only admins can edit this field</small>
+        {% endif %}
+    </div>
+
     <div class="row">
         <div class="col-md-6 mb-3">
             <label for="contact_person" class="form-label">Contact Person</label>

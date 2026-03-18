@@ -46,7 +46,7 @@ class TestUserModel:
         assert u.is_active is False
 
     def test_roles_list(self):
-        assert ROLES == ["user", "manager", "admin"]
+        assert ROLES == ["user", "accounts", "manager", "admin"]
 
 
 # ── Company model ──────────────────────────────────────────────

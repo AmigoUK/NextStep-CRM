@@ -116,7 +116,7 @@ def create_app(config_class=None):
     app.register_blueprint(users_bp, url_prefix="/users")
     app.register_blueprint(data_io_bp, url_prefix="/settings/data")
     app.register_blueprint(google_bp, url_prefix="/google")
-    app.register_blueprint(orders_bp, url_prefix="/admin/orders")
+    app.register_blueprint(orders_bp, url_prefix="/accounts")
 
     # ── Backward-compatible redirects ──────────────────────────
     @app.route("/clients/")
@@ -139,6 +139,7 @@ def create_app(config_class=None):
             AttachmentTag, DEFAULT_ATTACHMENT_TAGS,
             Attachment,
             User, ROLES,
+            Invoice, INVOICE_STATUSES,
             GoogleOAuthConfig, GoogleCredential,
             GoogleCalendarSync,
             GoogleDoc, DocTemplate,
@@ -278,8 +279,66 @@ def create_app(config_class=None):
 
         db.session.commit()
 
-        # Create any new tables (contacts, social_accounts)
+        # ── Feature 1: internal_id on companies ──────────────
+        inspector = db.inspect(db.engine)
+        if "companies" in inspector.get_table_names():
+            comp_columns = [col["name"] for col in inspector.get_columns("companies")]
+            if "internal_id" not in comp_columns:
+                db.session.execute(db.text(
+                    "ALTER TABLE companies ADD COLUMN internal_id VARCHAR(50)"
+                ))
+                db.session.commit()
+                db.session.execute(db.text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_companies_internal_id ON companies(internal_id)"
+                ))
+                db.session.commit()
+
+        # ── Feature 3: is_active on companies and contacts ───
+        if "companies" in inspector.get_table_names():
+            comp_columns = [col["name"] for col in inspector.get_columns("companies")]
+            if "is_active" not in comp_columns:
+                db.session.execute(db.text(
+                    "ALTER TABLE companies ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT 1"
+                ))
+                db.session.commit()
+
+        if "contacts" in inspector.get_table_names():
+            cont_columns = [col["name"] for col in inspector.get_columns("contacts")]
+            if "is_active" not in cont_columns:
+                db.session.execute(db.text(
+                    "ALTER TABLE contacts ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT 1"
+                ))
+                db.session.commit()
+
+        # ── Feature 2 & 3: AppSettings new columns ──────────
+        if "app_settings" in inspector.get_table_names():
+            as_columns = [col["name"] for col in inspector.get_columns("app_settings")]
+            if "company_list_columns" not in as_columns:
+                db.session.execute(db.text(
+                    "ALTER TABLE app_settings ADD COLUMN company_list_columns TEXT DEFAULT '{}'"
+                ))
+            if "show_deactivated_to_managers" not in as_columns:
+                db.session.execute(db.text(
+                    "ALTER TABLE app_settings ADD COLUMN show_deactivated_to_managers BOOLEAN DEFAULT 1"
+                ))
+            if "show_deactivated_to_users" not in as_columns:
+                db.session.execute(db.text(
+                    "ALTER TABLE app_settings ADD COLUMN show_deactivated_to_users BOOLEAN DEFAULT 0"
+                ))
+            db.session.commit()
+
+        # Create any new tables (contacts, social_accounts, invoices)
         db.create_all()
+
+        # ── Feature 4: composite index for invoice queries ───
+        try:
+            db.session.execute(db.text(
+                "CREATE INDEX IF NOT EXISTS ix_invoices_company_status_due "
+                "ON invoices(company_id, status, due_date)"
+            ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
         os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
         # ── Migrate contact_person data to Contact records ──

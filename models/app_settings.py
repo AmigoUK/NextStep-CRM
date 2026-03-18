@@ -1,4 +1,20 @@
+import json
+
 from extensions import db
+
+DEFAULT_COMPANY_COLUMNS = {
+    "columns": {
+        "internal_id":      {"label": "ID",              "desktop": True,  "tablet": False, "mobile": False},
+        "company_name":     {"label": "Company",         "desktop": True,  "tablet": True,  "mobile": True,  "locked": True},
+        "contact_person":   {"label": "Contact Person",  "desktop": True,  "tablet": True,  "mobile": False},
+        "industry":         {"label": "Industry",        "desktop": True,  "tablet": False, "mobile": False},
+        "status":           {"label": "Status",          "desktop": True,  "tablet": True,  "mobile": True},
+        "last_interaction": {"label": "Last Interaction", "desktop": True,  "tablet": True,  "mobile": False},
+        "next_followup":    {"label": "Next Follow-up",  "desktop": True,  "tablet": False, "mobile": False},
+        "owner":            {"label": "Owner",           "desktop": True,  "tablet": False, "mobile": False},
+        "actions":          {"label": "Actions",         "desktop": True,  "tablet": True,  "mobile": True,  "locked": True},
+    }
+}
 
 
 class AppSettings(db.Model):
@@ -11,6 +27,20 @@ class AppSettings(db.Model):
     pagination_size = db.Column(db.Integer, nullable=False, default=25)
     back_to_top = db.Column(db.Boolean, nullable=False, default=True)
     risk_assessment_mode = db.Column(db.String(10), nullable=False, default="full")
+    company_list_columns = db.Column(db.Text, default="{}")
+    show_deactivated_to_managers = db.Column(db.Boolean, default=True)
+    show_deactivated_to_users = db.Column(db.Boolean, default=False)
+
+    @property
+    def company_columns_config(self):
+        raw = json.loads(self.company_list_columns or "{}")
+        if not raw or "columns" not in raw:
+            return DEFAULT_COMPANY_COLUMNS
+        return raw
+
+    @company_columns_config.setter
+    def company_columns_config(self, value):
+        self.company_list_columns = json.dumps(value)
 
     @staticmethod
     def get():

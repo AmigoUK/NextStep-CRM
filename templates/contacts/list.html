@@ -50,12 +50,13 @@
         </thead>
         <tbody>
             {% for contact in contacts %}
-            <tr>
+            <tr class="{{ 'deactivated-row' if not contact.is_active else '' }}">
                 <td>
                     <a href="{{ url_for('contacts.detail_contact', id=contact.id) }}" class="text-decoration-none fw-semibold">
                         {{ contact.full_name }}
                     </a>
                     {% if contact.is_primary %}<span class="badge bg-primary ms-1">Primary</span>{% endif %}
+                    {% if not contact.is_active %}<span class="badge bg-secondary ms-1">Deactivated</span>{% endif %}
                 </td>
                 <td>{{ contact.job_title or '—' }}</td>
                 <td>
@@ -79,6 +80,14 @@
                     {% endfor %}
                 </td>
                 <td class="text-end">
+                    {% if current_user.has_role_at_least("manager") %}
+                    <form method="POST" action="{{ url_for('contacts.toggle_active', id=contact.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-{% if contact.is_active %}secondary{% else %}success{% endif %}" title="{% if contact.is_active %}Deactivate{% else %}Activate{% endif %}">
+                            <i class="bi bi-{% if contact.is_active %}eye-slash{% else %}eye{% endif %}"></i>
+                        </button>
+                    </form>
+                    {% endif %}
                     <a href="{{ url_for('contacts.edit_contact', id=contact.id) }}" class="btn btn-sm btn-outline-secondary">
                         <i class="bi bi-pencil"></i>
                     </a>

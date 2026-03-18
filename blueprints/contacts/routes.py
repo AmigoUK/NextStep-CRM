@@ -23,6 +23,17 @@ def list_contacts():
     if not current_user.has_role_at_least("manager"):
         query = query.filter(Contact.user_id == current_user.id)
 
+    # Feature 3: is_active filtering
+    settings = AppSettings.get()
+    if current_user.has_role_at_least("admin"):
+        pass  # sees all
+    elif current_user.has_role_at_least("manager"):
+        if not settings.show_deactivated_to_managers:
+            query = query.filter(Contact.is_active == True)  # noqa: E712
+    else:
+        if not settings.show_deactivated_to_users:
+            query = query.filter(Contact.is_active == True)  # noqa: E712
+
     if q:
         query = query.filter(
             db.or_(
@@ -233,6 +244,20 @@ def reassign_contact(id):
     contact.user_id = target_user.id
     db.session.commit()
     return jsonify({"ok": True, "message": f"Contact reassigned to {target_user.display_name}."})
+
+
+@contacts_bp.route("/<int:id>/toggle-active", methods=["POST"])
+@role_required("manager")
+def toggle_active(id):
+    """Toggle is_active on a contact."""
+    contact = db.get_or_404(Contact, id)
+    contact.is_active = not contact.is_active
+    db.session.commit()
+    state = "activated" if contact.is_active else "deactivated"
+    if _is_ajax():
+        return jsonify({"ok": True, "is_active": contact.is_active, "message": f"Contact '{contact.full_name}' {state}."})
+    flash(f"Contact '{contact.full_name}' {state}.", "success")
+    return redirect(url_for("contacts.detail_contact", id=contact.id))
 
 
 def _save_social_accounts(contact_id, form):

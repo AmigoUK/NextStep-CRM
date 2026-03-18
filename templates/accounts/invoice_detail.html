@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice {{ invoice.invoice_number }} — NextStep CRM{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('accounts.dashboard') }}">Accounts</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('accounts.invoice_list') }}">Invoices</a></li>
+        <li class="breadcrumb-item active">{{ invoice.invoice_number }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Invoice {{ invoice.invoice_number }}</h4>
+                {% if invoice.is_overdue %}
+                    <span class="badge bg-danger fs-6">Overdue</span>
+                {% elif invoice.status == 'paid' %}
+                    <span class="badge bg-success fs-6">Paid</span>
+                {% elif invoice.status == 'partially_paid' %}
+                    <span class="badge bg-info fs-6">Partially Paid</span>
+                {% elif invoice.status == 'unpaid' %}
+                    <span class="badge bg-warning text-dark fs-6">Unpaid</span>
+                {% else %}
+                    <span class="badge bg-secondary fs-6">{{ invoice.status|capitalize }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p class="mb-2"><strong>Company:</strong>
+                            <a href="{{ url_for('companies.detail_company', id=invoice.company_id) }}">
+                                {{ invoice.company.company_name }}
+                            </a>
+                        </p>
+                        {% if invoice.company.internal_id %}
+                        <p class="mb-2"><strong>Company ID:</strong> {{ invoice.company.internal_id }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-2"><strong>Amount:</strong> {{ invoice.currency }} {{ "{:,.2f}".format(invoice.amount) }}</p>
+                        {% if invoice.paid_amount %}
+                        <p class="mb-2"><strong>Paid Amount:</strong> {{ invoice.currency }} {{ "{:,.2f}".format(invoice.paid_amount) }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <p class="mb-2"><strong>Issue Date:</strong> {{ invoice.issue_date.strftime('%d %b %Y') }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-2"><strong>Due Date:</strong> {{ invoice.due_date.strftime('%d %b %Y') }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-2"><strong>Paid Date:</strong> {{ invoice.paid_date.strftime('%d %b %Y') if invoice.paid_date else '—' }}</p>
+                    </div>
+                </div>
+                {% if invoice.notes %}
+                <div class="mb-3">
+                    <strong>Notes:</strong>
+                    <p class="mb-0">{{ invoice.notes }}</p>
+                </div>
+                {% endif %}
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('accounts.edit_invoice', id=invoice.id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i>Edit
+                    </a>
+                    <a href="{{ url_for('accounts.invoice_list') }}" class="btn btn-outline-secondary">Back to List</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-clock-history me-1"></i>Payment Info</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Payment Days:</strong>
+                    {% if invoice.status == 'paid' %}
+                        {% if invoice.payment_days < 0 %}
+                            <span class="text-success">{{ invoice.payment_days|abs }} days early</span>
+                        {% elif invoice.payment_days == 0 %}
+                            <span class="text-success">On time</span>
+                        {% else %}
+                            <span class="text-danger">{{ invoice.payment_days }} days late</span>
+                        {% endif %}
+                    {% elif invoice.is_overdue %}
+                        <span class="text-danger">{{ invoice.payment_days }} days overdue</span>
+                    {% else %}
+                        —
+                    {% endif %}
+                </p>
+                <p class="mb-0"><small class="text-muted">Created {{ invoice.created_at.strftime('%d %b %Y') }}</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

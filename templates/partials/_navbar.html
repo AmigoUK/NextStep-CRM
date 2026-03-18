@@ -97,6 +97,14 @@
                         </li>
                     </ul>
                 </li>
+                {% if current_user.can_access_invoices() %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('accounts.') %}active{% endif %}"
+                       href="{{ url_for('accounts.dashboard') }}">
+                        <i class="bi bi-cash-stack me-1"></i>Accounts
+                    </a>
+                </li>
+                {% endif %}
                 {% if current_user.has_role_at_least("manager") %}
                 <li class="nav-item ms-lg-2">
                     <a class="nav-link {% if request.endpoint and request.endpoint.startswith('users.') %}active{% endif %}"
@@ -124,6 +132,8 @@
                                     <span class="badge bg-danger">Admin</span>
                                 {% elif current_user.role == 'manager' %}
                                     <span class="badge bg-primary">Manager</span>
+                                {% elif current_user.role == 'accounts' %}
+                                    <span class="badge bg-info">Accounts</span>
                                 {% else %}
                                     <span class="badge bg-secondary">User</span>
                                 {% endif %}

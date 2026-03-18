@@ -432,6 +432,89 @@
     </div>
 </div>
 
+<!-- Deactivation Visibility Card -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-eye me-1"></i>Deactivation Visibility</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small mb-3">Control which roles can see deactivated companies and contacts. Admins always see everything.</p>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="form-check form-switch">
+                    <input class="form-check-input ui-pref-toggle" type="checkbox"
+                           id="prefDeactivatedManagers" data-pref="show_deactivated_to_managers"
+                           {{ 'checked' if settings.show_deactivated_to_managers }}>
+                    <label class="form-check-label" for="prefDeactivatedManagers">
+                        Show deactivated records to Managers
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-check form-switch">
+                    <input class="form-check-input ui-pref-toggle" type="checkbox"
+                           id="prefDeactivatedUsers" data-pref="show_deactivated_to_users"
+                           {{ 'checked' if settings.show_deactivated_to_users }}>
+                    <label class="form-check-label" for="prefDeactivatedUsers">
+                        Show deactivated records to Users
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Company List Columns Card -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-table me-1"></i>Company List Columns</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small mb-3">Configure which columns are visible at each screen size. Company and Actions columns are always shown.</p>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th class="text-center">Desktop</th>
+                        <th class="text-center">Tablet</th>
+                        <th class="text-center">Mobile</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set col_config = settings.company_columns_config %}
+                    {% for key, col in col_config.get('columns', {}).items() %}
+                    <tr>
+                        <td>{{ col.get('label', key) }}</td>
+                        <td class="text-center">
+                            <input type="checkbox" class="form-check-input col-config-cb"
+                                   data-col="{{ key }}" data-bp="desktop"
+                                   {{ 'checked' if col.get('desktop', true) }}
+                                   {{ 'disabled' if col.get('locked') }}>
+                        </td>
+                        <td class="text-center">
+                            <input type="checkbox" class="form-check-input col-config-cb"
+                                   data-col="{{ key }}" data-bp="tablet"
+                                   {{ 'checked' if col.get('tablet', false) }}
+                                   {{ 'disabled' if col.get('locked') }}>
+                        </td>
+                        <td class="text-center">
+                            <input type="checkbox" class="form-check-input col-config-cb"
+                                   data-col="{{ key }}" data-bp="mobile"
+                                   {{ 'checked' if col.get('mobile', false) }}
+                                   {{ 'disabled' if col.get('locked') }}>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <button id="saveColConfig" class="btn btn-primary btn-sm mt-3">
+            <i class="bi bi-check-lg me-1"></i>Save Column Configuration
+        </button>
+    </div>
+</div>
+
 <!-- Google Integration Card -->
 <div class="card mb-4">
     <div class="card-header">

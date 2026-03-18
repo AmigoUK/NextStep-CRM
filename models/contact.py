@@ -19,6 +19,7 @@ class Contact(db.Model):
         db.Integer, db.ForeignKey("companies.id"), nullable=True
     )
     is_primary = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
     notes = db.Column(db.Text, default="")
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

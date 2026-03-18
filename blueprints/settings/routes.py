@@ -522,6 +522,20 @@ def update_ui_preferences():
             settings.pagination_size = size
     if "back_to_top" in data:
         settings.back_to_top = bool(data["back_to_top"])
+    if "show_deactivated_to_managers" in data:
+        settings.show_deactivated_to_managers = bool(data["show_deactivated_to_managers"])
+    if "show_deactivated_to_users" in data:
+        settings.show_deactivated_to_users = bool(data["show_deactivated_to_users"])
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@settings_bp.route("/company-columns", methods=["POST"])
+@role_required("admin")
+def update_company_columns():
+    data = request.get_json(silent=True) or {}
+    settings = AppSettings.get()
+    settings.company_columns_config = data
     db.session.commit()
     return jsonify({"ok": True})
 

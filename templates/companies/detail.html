@@ -10,6 +10,23 @@
     </ol>
 </nav>
 
+{% if not company.is_active %}
+<div class="alert alert-warning d-flex align-items-center mb-3">
+    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+    <div>
+        <strong>This company is deactivated.</strong> It is hidden from normal views.
+        {% if current_user.has_role_at_least("manager") %}
+        <form method="POST" action="{{ url_for('companies.toggle_active', id=company.id) }}" class="d-inline ms-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-success">
+                <i class="bi bi-eye me-1"></i>Reactivate
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 <div class="row">
     <!-- Left Column — Company Profile Sidebar -->
     <div class="col-lg-4 mb-4">
@@ -19,7 +36,13 @@
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
                             <h4 class="mb-1">{{ company.company_name }}</h4>
+                            {% if company.internal_id %}
+                            <small class="text-muted d-block mb-1"><i class="bi bi-hash me-1"></i>{{ company.internal_id }}</small>
+                            {% endif %}
                             <span class="badge badge-{{ company.status }} fs-6">{{ company.status|capitalize }}</span>
+                            {% if not company.is_active %}
+                                <span class="badge bg-secondary fs-6 ms-1">Deactivated</span>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -119,6 +142,15 @@
                         <a href="{{ url_for('companies.edit_company', id=company.id) }}" class="btn btn-outline-primary btn-sm flex-fill">
                             <i class="bi bi-pencil me-1"></i>Edit
                         </a>
+                        {% if current_user.has_role_at_least("manager") %}
+                        <form method="POST" action="{{ url_for('companies.toggle_active', id=company.id) }}" class="flex-fill">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-outline-{% if company.is_active %}warning{% else %}success{% endif %} btn-sm w-100">
+                                <i class="bi bi-{% if company.is_active %}eye-slash{% else %}eye{% endif %} me-1"></i>
+                                {{ 'Deactivate' if company.is_active else 'Activate' }}
+                            </button>
+                        </form>
+                        {% endif %}
                         <button type="button" class="btn btn-outline-danger btn-sm flex-fill"
                                 data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"
                                 data-item-name="{{ company.company_name }}"
@@ -146,6 +178,55 @@
                 </div>
             </div>
 
+            <!-- Payment Intelligence Card (Feature 4) -->
+            {% if payment_intel %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-cash-stack me-1"></i>Payment Intelligence</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-2">
+                        <div class="col-6 mb-2">
+                            <div class="border rounded py-2">
+                                <div class="fs-6 fw-bold {% if payment_intel.avg_payment_days is not none and payment_intel.avg_payment_days > 0 %}text-danger{% elif payment_intel.avg_payment_days is not none %}text-success{% else %}text-muted{% endif %}">
+                                    {% if payment_intel.avg_payment_days is not none %}
+                                        {{ payment_intel.avg_payment_days }} days
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">Avg Payment</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <div class="border rounded py-2">
+                                <div class="fs-6 fw-bold text-primary">&pound;{{ "{:,.0f}".format(payment_intel.avg_invoice_value) }}</div>
+                                <small class="text-muted">Avg Invoice</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <div class="border rounded py-2">
+                                <div class="fs-6 fw-bold {% if payment_intel.total_outstanding > 0 %}text-warning{% else %}text-success{% endif %}">&pound;{{ "{:,.2f}".format(payment_intel.total_outstanding) }}</div>
+                                <small class="text-muted">Outstanding</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <div class="border rounded py-2">
+                                <div class="fs-6 fw-bold {% if payment_intel.overdue_count > 0 %}text-danger{% else %}text-success{% endif %}">{{ payment_intel.overdue_count }}</div>
+                                <small class="text-muted">Overdue</small>
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted">Based on {{ payment_intel.total_invoices }} invoice{{ 's' if payment_intel.total_invoices != 1 }}</small>
+                    {% if current_user.can_access_invoices() %}
+                    <a href="{{ url_for('accounts.invoice_list', q=company.internal_id or company.company_name) }}" class="btn btn-sm btn-outline-primary w-100 mt-2">
+                        <i class="bi bi-receipt me-1"></i>View Invoices
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Contacts (People) Card -->
             <div class="card mb-3">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -160,11 +241,12 @@
                     {% if company_contacts %}
                     <div class="list-group list-group-flush">
                         {% for ct in company_contacts %}
-                        <a href="{{ url_for('contacts.detail_contact', id=ct.id) }}" class="list-group-item list-group-item-action py-2 px-0">
+                        <a href="{{ url_for('contacts.detail_contact', id=ct.id) }}" class="list-group-item list-group-item-action py-2 px-0 {% if not ct.is_active %}deactivated-row{% endif %}">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <strong>{{ ct.full_name }}</strong>
                                     {% if ct.is_primary %}<span class="badge bg-primary ms-1">Primary</span>{% endif %}
+                                    {% if not ct.is_active %}<span class="badge bg-secondary ms-1">Deactivated</span>{% endif %}
                                     {% if ct.job_title %}<br><small class="text-muted">{{ ct.job_title }}</small>{% endif %}
                                 </div>
                                 <div>

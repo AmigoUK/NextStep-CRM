@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload
 from blueprints.auth.decorators import can_access_record, role_required
 from blueprints.companies import companies_bp
 from extensions import db
-from models import Company, COMPANY_STATUSES, Interaction, FollowUp, QuickFunction, InteractionType, CustomFieldDefinition, CustomFieldValue, Attachment, AttachmentCategory, AttachmentTag, AppSettings, Contact
+from models import Company, COMPANY_STATUSES, Interaction, FollowUp, QuickFunction, InteractionType, CustomFieldDefinition, CustomFieldValue, Attachment, AttachmentCategory, AttachmentTag, AppSettings, Contact, Invoice
 from models.user import User
 
 
@@ -51,14 +51,30 @@ def list_companies():
         .subquery()
     )
 
+    # Subquery for overdue invoice count per company
+    overdue_invoice_sq = (
+        db.session.query(
+            Invoice.company_id,
+            func.count(Invoice.id).label("overdue_count"),
+        )
+        .filter(
+            Invoice.status.in_(["unpaid", "partially_paid"]),
+            Invoice.due_date < date.today(),
+        )
+        .group_by(Invoice.company_id)
+        .subquery()
+    )
+
     query = (
         db.session.query(
             Company,
             last_interaction_sq.c.last_interaction,
             next_followup_sq.c.next_followup,
+            overdue_invoice_sq.c.overdue_count,
         )
         .outerjoin(last_interaction_sq, Company.id == last_interaction_sq.c.company_id)
         .outerjoin(next_followup_sq, Company.id == next_followup_sq.c.company_id)
+        .outerjoin(overdue_invoice_sq, Company.id == overdue_invoice_sq.c.company_id)
         .options(joinedload(Company.owner))
     )
 
@@ -66,12 +82,27 @@ def list_companies():
     if not current_user.has_role_at_least("manager"):
         query = query.filter(Company.user_id == current_user.id)
 
+    # Feature 3: is_active filtering
+    settings = AppSettings.get()
+    if current_user.has_role_at_least("admin"):
+        pass  # sees all
+    elif current_user.has_role_at_least("manager"):
+        if not settings.show_deactivated_to_managers:
+            query = query.filter(Company.is_active == True)  # noqa: E712
+    else:
+        if not settings.show_deactivated_to_users:
+            query = query.filter(Company.is_active == True)  # noqa: E712
+
     if q:
-        query = query.filter(Company.company_name.ilike(f"%{q}%"))
+        query = query.filter(
+            db.or_(
+                Company.company_name.ilike(f"%{q}%"),
+                Company.internal_id.ilike(f"%{q}%"),
+            )
+        )
     if status and view != "board":
         query = query.filter(Company.status == status)
 
-    settings = AppSettings.get()
     page = request.args.get("page", 1, type=int)
     ordered = query.order_by(Company.company_name)
 
@@ -84,9 +115,10 @@ def list_companies():
 
     # Attach computed dates to company objects for template access
     companies = []
-    for company, last_interaction, next_followup in results:
+    for company, last_interaction, next_followup, overdue_count in results:
         company.last_interaction = last_interaction
         company.next_followup = next_followup
+        company.overdue_invoice_count = overdue_count or 0
         companies.append(company)
 
     active_qfs = QuickFunction.query.filter_by(is_active=True).order_by(
@@ -98,6 +130,9 @@ def list_companies():
     if current_user.has_role_at_least("manager"):
         all_users = User.query.filter_by(is_active_user=True).order_by(User.display_name).all()
 
+    # Feature 2: column config
+    column_config = settings.company_columns_config
+
     return render_template(
         "companies/list.html",
         companies=companies,
@@ -108,6 +143,7 @@ def list_companies():
         quick_functions=[qf.to_dict() for qf in active_qfs],
         pagination=pagination,
         all_users=all_users,
+        column_config=column_config,
     )
 
 
@@ -140,8 +176,27 @@ def create_company():
                 custom_values={},
             )
 
+        # Feature 1: internal_id (admin-only)
+        internal_id = None
+        if current_user.has_role_at_least("admin"):
+            internal_id = request.form.get("internal_id", "").strip() or None
+            if internal_id:
+                existing = Company.query.filter(
+                    func.lower(Company.internal_id) == internal_id.lower()
+                ).first()
+                if existing:
+                    flash(f"Internal ID '{internal_id}' is already in use.", "danger")
+                    return render_template(
+                        "companies/form.html",
+                        company=None,
+                        statuses=COMPANY_STATUSES,
+                        custom_fields=active_custom_fields,
+                        custom_values={},
+                    )
+
         company = Company(
             company_name=company_name,
+            internal_id=internal_id,
             industry=request.form.get("industry", "").strip(),
             phone=request.form.get("phone", "").strip(),
             email=request.form.get("email", "").strip(),
@@ -279,6 +334,9 @@ def detail_company(id):
     if current_user.has_role_at_least("manager"):
         all_users = User.query.filter_by(is_active_user=True).order_by(User.display_name).all()
 
+    # Feature 4: Payment Intelligence metrics
+    payment_intel = _compute_payment_intel(company)
+
     return render_template(
         "companies/detail.html",
         company=company,
@@ -300,7 +358,41 @@ def detail_company(id):
         company_id=company.id,
         company_contacts=company_contacts,
         all_users=all_users,
+        payment_intel=payment_intel,
     )
+
+
+def _compute_payment_intel(company):
+    """Compute payment intelligence metrics for a company."""
+    invoices = company.invoices
+    if not invoices:
+        return None
+
+    today = date.today()
+    paid_invoices = [inv for inv in invoices if inv.status == "paid" and inv.paid_date and inv.due_date]
+    outstanding = [inv for inv in invoices if inv.status in ("unpaid", "partially_paid")]
+    overdue = [inv for inv in outstanding if inv.due_date and inv.due_date < today]
+
+    avg_payment_days = None
+    if paid_invoices:
+        total_days = sum((inv.paid_date - inv.due_date).days for inv in paid_invoices)
+        avg_payment_days = round(total_days / len(paid_invoices), 1)
+
+    avg_invoice_value = round(sum(inv.amount for inv in invoices) / len(invoices), 2) if invoices else 0
+    total_outstanding = sum((inv.amount or 0) - (inv.paid_amount or 0) for inv in outstanding)
+    overdue_count = len(overdue)
+
+    # Currency from most recent invoice
+    currency = invoices[0].currency if invoices else "GBP"
+
+    return {
+        "avg_payment_days": avg_payment_days,
+        "avg_invoice_value": avg_invoice_value,
+        "total_outstanding": round(total_outstanding, 2),
+        "overdue_count": overdue_count,
+        "total_invoices": len(invoices),
+        "currency": currency,
+    }
 
 
 @companies_bp.route("/<int:id>/edit", methods=["GET", "POST"])
@@ -337,6 +429,29 @@ def edit_company(id):
         company.contact_person = request.form.get("contact_person", "").strip()
         company.status = request.form.get("status", "lead")
 
+        # Feature 1: internal_id (admin-only)
+        if current_user.has_role_at_least("admin"):
+            internal_id = request.form.get("internal_id", "").strip() or None
+            if internal_id:
+                existing = Company.query.filter(
+                    func.lower(Company.internal_id) == internal_id.lower(),
+                    Company.id != company.id,
+                ).first()
+                if existing:
+                    flash(f"Internal ID '{internal_id}' is already in use.", "danger")
+                    custom_values = {
+                        v.definition_id: v.value
+                        for v in CustomFieldValue.query.filter_by(company_id=company.id).all()
+                    }
+                    return render_template(
+                        "companies/form.html",
+                        company=company,
+                        statuses=COMPANY_STATUSES,
+                        custom_fields=active_custom_fields,
+                        custom_values=custom_values,
+                    )
+            company.internal_id = internal_id
+
         # Upsert custom field values
         for cf in active_custom_fields:
             val = request.form.get(f"custom_field_{cf.id}", "").strip()
@@ -363,6 +478,20 @@ def edit_company(id):
         custom_fields=active_custom_fields,
         custom_values=custom_values,
     )
+
+
+@companies_bp.route("/<int:id>/toggle-active", methods=["POST"])
+@role_required("manager")
+def toggle_active(id):
+    """Toggle is_active on a company."""
+    company = db.get_or_404(Company, id)
+    company.is_active = not company.is_active
+    db.session.commit()
+    state = "activated" if company.is_active else "deactivated"
+    if _is_ajax():
+        return jsonify({"ok": True, "is_active": company.is_active, "message": f"Company '{company.company_name}' {state}."})
+    flash(f"Company '{company.company_name}' {state}.", "success")
+    return redirect(url_for("companies.detail_company", id=company.id))
 
 
 @companies_bp.route("/<int:id>/status", methods=["PATCH"])

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Invoices — NextStep CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-receipt me-2"></i>Invoices</h1>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('accounts.import_invoices') }}" class="btn btn-outline-primary">
+            <i class="bi bi-upload me-1"></i>Import
+        </a>
+        <a href="{{ url_for('accounts.export_invoices') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-download me-1"></i>Export
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filter -->
+<form method="GET" class="row g-3 mb-4">
+    <div class="col-md-5">
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" name="q" class="form-control" placeholder="Search by invoice #, company..."
+                   value="{{ q }}">
+        </div>
+    </div>
+    <div class="col-md-4">
+        <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            {% for s in statuses %}
+                <option value="{{ s }}" {% if status == s %}selected{% endif %}>
+                    {{ s|replace('_', ' ')|capitalize }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-outline-primary w-100">Filter</button>
+    </div>
+</form>
+
+{% if invoices %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Invoice #</th>
+                <th>Company</th>
+                <th>Amount</th>
+                <th>Issue Date</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Paid Date</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inv in invoices %}
+            <tr class="{{ 'table-danger' if inv.is_overdue else '' }}">
+                <td data-label="Invoice #">
+                    <a href="{{ url_for('accounts.invoice_detail', id=inv.id) }}" class="text-decoration-none fw-semibold">
+                        {{ inv.invoice_number }}
+                    </a>
+                </td>
+                <td data-label="Company">
+                    <a href="{{ url_for('companies.detail_company', id=inv.company_id) }}" class="text-decoration-none">
+                        {{ inv.company.company_name }}
+                    </a>
+                </td>
+                <td data-label="Amount">{{ inv.currency }} {{ "{:,.2f}".format(inv.amount) }}</td>
+                <td data-label="Issue Date">{{ inv.issue_date.strftime('%d %b %Y') if inv.issue_date else '—' }}</td>
+                <td data-label="Due Date">{{ inv.due_date.strftime('%d %b %Y') if inv.due_date else '—' }}</td>
+                <td data-label="Status">
+                    {% if inv.status == 'paid' %}
+                        <span class="badge bg-success">Paid</span>
+                    {% elif inv.status == 'unpaid' %}
+                        <span class="badge bg-warning text-dark">Unpaid</span>
+                    {% elif inv.status == 'partially_paid' %}
+                        <span class="badge bg-info">Partially Paid</span>
+                    {% elif inv.status == 'cancelled' %}
+                        <span class="badge bg-secondary">Cancelled</span>
+                    {% elif inv.status == 'credited' %}
+                        <span class="badge bg-dark">Credited</span>
+                    {% endif %}
+                    {% if inv.is_overdue %}
+                        <span class="badge bg-danger ms-1">Overdue</span>
+                    {% endif %}
+                </td>
+                <td data-label="Paid Date">{{ inv.paid_date.strftime('%d %b %Y') if inv.paid_date else '—' }}</td>
+                <td data-label="Actions" class="text-end">
+                    <a href="{{ url_for('accounts.edit_invoice', id=inv.id) }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% include "partials/_pagination.html" %}
+{% else %}
+<div class="empty-state">
+    <i class="bi bi-receipt d-block"></i>
+    <h5>No invoices found</h5>
+    <p>{% if q or status %}Try adjusting your search or filters.{% else %}<a href="{{ url_for('accounts.import_invoices') }}">Import invoices</a> to get started.{% endif %}</p>
+</div>
+{% endif %}
+{% endblock %}

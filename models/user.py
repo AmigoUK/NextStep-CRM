@@ -6,9 +6,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from extensions import db
 
-ROLES = ["user", "manager", "admin"]
+ROLES = ["user", "accounts", "manager", "admin"]
 
-_ROLE_RANK = {role: i for i, role in enumerate(ROLES)}
+_ROLE_RANK = {"user": 0, "accounts": 0, "manager": 1, "admin": 2}
 
 
 class User(UserMixin, db.Model):
@@ -42,6 +42,10 @@ class User(UserMixin, db.Model):
     def has_role_at_least(self, minimum_role: str) -> bool:
         """Return True if this user's role is >= the given minimum."""
         return _ROLE_RANK.get(self.role, 0) >= _ROLE_RANK.get(minimum_role, 0)
+
+    def can_access_invoices(self) -> bool:
+        """Return True if this user can view/manage invoices."""
+        return self.role in ("accounts", "manager", "admin")
 
     def __repr__(self):
         return f"<User {self.username} ({self.role})>"

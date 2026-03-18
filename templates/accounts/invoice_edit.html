@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Invoice {{ invoice.invoice_number }} — NextStep CRM{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('accounts.dashboard') }}">Accounts</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('accounts.invoice_list') }}">Invoices</a></li>
+        <li class="breadcrumb-item active">Edit {{ invoice.invoice_number }}</li>
+    </ol>
+</nav>
+
+<h1 class="mb-4">Edit Invoice {{ invoice.invoice_number }}</h1>
+
+<div class="card">
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <p><strong>Company:</strong> {{ invoice.company.company_name }}</p>
+                <p><strong>Amount:</strong> {{ invoice.currency }} {{ "{:,.2f}".format(invoice.amount) }}</p>
+                <p><strong>Issue Date:</strong> {{ invoice.issue_date.strftime('%d %b %Y') }}</p>
+                <p><strong>Due Date:</strong> {{ invoice.due_date.strftime('%d %b %Y') }}</p>
+            </div>
+        </div>
+        <hr>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        {% for s in statuses %}
+                        <option value="{{ s }}" {% if invoice.status == s %}selected{% endif %}>
+                            {{ s|replace('_', ' ')|capitalize }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="paid_date" class="form-label">Paid Date</label>
+                    <input type="date" class="form-control" id="paid_date" name="paid_date"
+                           value="{{ invoice.paid_date.isoformat() if invoice.paid_date else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="paid_amount" class="form-label">Paid Amount</label>
+                    <input type="number" class="form-control" id="paid_amount" name="paid_amount" step="0.01"
+                           value="{{ invoice.paid_amount if invoice.paid_amount else '' }}">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3">{{ invoice.notes or '' }}</textarea>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-1"></i>Update Invoice
+                </button>
+                <a href="{{ url_for('accounts.invoice_detail', id=invoice.id) }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

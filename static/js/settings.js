@@ -134,6 +134,48 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    /* Company list column configuration save handler */
+    var saveColBtn = document.getElementById("saveColConfig");
+    if (saveColBtn) {
+        saveColBtn.addEventListener("click", function () {
+            var config = { columns: {} };
+            var rows = document.querySelectorAll(".col-config-cb");
+            rows.forEach(function (cb) {
+                var col = cb.getAttribute("data-col");
+                var bp = cb.getAttribute("data-bp");
+                if (!config.columns[col]) {
+                    /* Find label from the row */
+                    var tr = cb.closest("tr");
+                    var label = tr ? tr.querySelector("td").textContent.trim() : col;
+                    config.columns[col] = { label: label };
+                    if (cb.disabled) {
+                        config.columns[col].locked = true;
+                    }
+                }
+                config.columns[col][bp] = cb.checked;
+            });
+
+            fetch("/settings/company-columns", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": getCsrfToken()
+                },
+                body: JSON.stringify(config)
+            })
+            .then(function (resp) { return resp.json(); })
+            .then(function (data) {
+                if (data.ok) {
+                    window.showToast("Column configuration saved.", "success");
+                }
+            })
+            .catch(function () {
+                window.showToast("Failed to save column configuration.", "danger");
+            });
+        });
+    }
+
     /* Quick function toggle switch AJAX handler */
     document.querySelectorAll(".settings-toggle").forEach(function (toggle) {
         toggle.addEventListener("change", function () {
