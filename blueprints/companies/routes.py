@@ -1,6 +1,6 @@
 import os
 import shutil
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from flask import abort, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -337,6 +337,24 @@ def detail_company(id):
     # Feature 4: Payment Intelligence metrics
     payment_intel = _compute_payment_intel(company)
 
+    # Cash position (if module enabled)
+    cash_in = 0
+    cash_out = 0
+    settings = AppSettings.get()
+    timeline_cutoff = date.today() - timedelta(days=settings.timeline_default_days)
+    if settings.cash_module_enabled:
+        from models.cash_transaction import CashTransaction
+        cash_q = CashTransaction.query.filter_by(company_id=company.id)
+        if not current_user.has_role_at_least("manager"):
+            cash_q = cash_q.filter_by(user_id=current_user.id)
+        from sqlalchemy import func as sqlfunc
+        cash_in = cash_q.filter_by(type="in").with_entities(
+            sqlfunc.coalesce(sqlfunc.sum(CashTransaction.amount), 0)
+        ).scalar()
+        cash_out = cash_q.filter_by(type="out").with_entities(
+            sqlfunc.coalesce(sqlfunc.sum(CashTransaction.amount), 0)
+        ).scalar()
+
     return render_template(
         "companies/detail.html",
         company=company,
@@ -359,6 +377,9 @@ def detail_company(id):
         company_contacts=company_contacts,
         all_users=all_users,
         payment_intel=payment_intel,
+        cash_in=cash_in,
+        cash_out=cash_out,
+        timeline_cutoff=timeline_cutoff,
     )
 
 

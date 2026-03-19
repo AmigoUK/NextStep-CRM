@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if transaction else 'New' }} Cash Transaction — NextStep CRM{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('cash.dashboard') }}">Cash</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('cash.transaction_list') }}">Transactions</a></li>
+        <li class="breadcrumb-item active">{{ 'Edit' if transaction else 'New' }}</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-wallet2 me-1"></i>
+                    {{ 'Edit Transaction' if transaction else 'Record Cash Transaction' }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="row g-3">
+                        <!-- Transaction Type -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Type <span class="text-danger">*</span></label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="type" id="typeIn" value="in"
+                                       {% if not transaction or transaction.type == 'in' %}checked{% endif %}>
+                                <label class="btn btn-outline-success" for="typeIn">
+                                    <i class="bi bi-arrow-down-circle me-1"></i>Cash In
+                                </label>
+                                <input type="radio" class="btn-check" name="type" id="typeOut" value="out"
+                                       {% if transaction and transaction.type == 'out' %}checked{% endif %}>
+                                <label class="btn btn-outline-danger" for="typeOut">
+                                    <i class="bi bi-arrow-up-circle me-1"></i>Cash Out
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Cash Out Method -->
+                        <div class="col-md-6" id="methodGroup" style="display: none;">
+                            <label class="form-label fw-semibold">Method <span class="text-danger">*</span></label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="method" id="methodAccounts" value="accounts"
+                                       {% if transaction and transaction.method == 'accounts' %}checked{% endif %}>
+                                <label class="btn btn-outline-secondary" for="methodAccounts">
+                                    <i class="bi bi-person-badge me-1"></i>Accounts
+                                </label>
+                                <input type="radio" class="btn-check" name="method" id="methodBank" value="bank"
+                                       {% if transaction and transaction.method == 'bank' %}checked{% endif %}>
+                                <label class="btn btn-outline-secondary" for="methodBank">
+                                    <i class="bi bi-bank me-1"></i>Bank
+                                </label>
+                            </div>
+                            <div class="form-text mt-1">
+                                <strong>Accounts</strong> — handed to accountant &nbsp;|&nbsp;
+                                <strong>Bank</strong> — paid into company bank
+                            </div>
+                        </div>
+
+                        <!-- Amount -->
+                        <div class="col-md-3">
+                            <label for="amount" class="form-label fw-semibold">Amount <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">&pound;</span>
+                                <input type="number" class="form-control" id="amount" name="amount"
+                                       step="0.01" min="0.01" required
+                                       value="{{ transaction.amount if transaction else '' }}">
+                            </div>
+                        </div>
+
+                        <!-- Currency -->
+                        <div class="col-md-3">
+                            <label for="currency" class="form-label fw-semibold">Currency</label>
+                            <input type="text" class="form-control" id="currency" name="currency"
+                                   maxlength="3" value="{{ transaction.currency if transaction else 'GBP' }}">
+                        </div>
+
+                        <!-- Company (Cash In only) -->
+                        <div class="col-md-6" id="companyGroup">
+                            <label for="company_id" class="form-label fw-semibold">Company <span class="text-danger">*</span></label>
+                            <select class="form-select" id="company_id" name="company_id" required>
+                                <option value="">Select company...</option>
+                                {% for co in companies %}
+                                <option value="{{ co.id }}"
+                                    {% if (transaction and transaction.company_id == co.id) or (not transaction and prefill_company_id == co.id) %}selected{% endif %}>
+                                    {{ co.company_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="col-md-6">
+                            <label for="transaction_date" class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="transaction_date" name="transaction_date"
+                                   required value="{{ transaction.transaction_date.isoformat() if transaction else today }}">
+                        </div>
+
+                        <!-- Description -->
+                        <div class="col-12">
+                            <label for="description" class="form-label fw-semibold">Description</label>
+                            <input type="text" class="form-control" id="description" name="description"
+                                   maxlength="200" placeholder="Brief description of the transaction"
+                                   value="{{ transaction.description if transaction else '' }}">
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="col-12">
+                            <label for="notes" class="form-label fw-semibold">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"
+                                      placeholder="Additional details (optional)">{{ transaction.notes if transaction else '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>{{ 'Update' if transaction else 'Record' }} Transaction
+                        </button>
+                        <a href="{{ url_for('cash.transaction_list') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const typeRadios = document.querySelectorAll('input[name="type"]');
+    const methodGroup = document.getElementById('methodGroup');
+    const methodRadios = document.querySelectorAll('input[name="method"]');
+    const companyGroup = document.getElementById('companyGroup');
+    const companySelect = document.getElementById('company_id');
+
+    function toggleFields() {
+        const isOut = document.getElementById('typeOut').checked;
+        // Cash Out: show method, hide company
+        methodGroup.style.display = isOut ? '' : 'none';
+        companyGroup.style.display = isOut ? 'none' : '';
+        companySelect.required = !isOut;
+        if (isOut) {
+            companySelect.value = '';
+        } else {
+            methodRadios.forEach(r => r.checked = false);
+        }
+    }
+
+    typeRadios.forEach(r => r.addEventListener('change', toggleFields));
+    toggleFields();
+})();
+</script>
+{% endblock %}

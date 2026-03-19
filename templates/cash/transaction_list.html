@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Cash Transactions — NextStep CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-wallet2 me-2"></i>Cash Transactions</h1>
+    <div>
+        <a href="{{ url_for('cash.dashboard') }}" class="btn btn-outline-secondary me-1">
+            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+        </a>
+        <a href="{{ url_for('cash.create_transaction') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Record Transaction
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<form method="GET" class="row g-3 mb-4">
+    <div class="col-md-3">
+        <select name="company_id" class="form-select">
+            <option value="">All Companies</option>
+            {% for co in companies %}
+            <option value="{{ co.id }}" {% if selected_company_id == co.id %}selected{% endif %}>
+                {{ co.company_name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="type" class="form-select">
+            <option value="">All Types</option>
+            <option value="in" {% if selected_type == 'in' %}selected{% endif %}>Cash In</option>
+            <option value="out" {% if selected_type == 'out' %}selected{% endif %}>Cash Out</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <input type="date" name="date_from" class="form-control" placeholder="From" value="{{ date_from }}">
+    </div>
+    <div class="col-md-2">
+        <input type="date" name="date_to" class="form-control" placeholder="To" value="{{ date_to }}">
+    </div>
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-outline-primary">
+            <i class="bi bi-funnel me-1"></i>Filter
+        </button>
+        <a href="{{ url_for('cash.transaction_list') }}" class="btn btn-outline-secondary">Clear</a>
+    </div>
+</form>
+
+{% if transactions %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Date</th>
+                <th>Company</th>
+                <th>Type</th>
+                <th>Description</th>
+                {% if current_user.has_role_at_least("manager") %}
+                <th>Recorded By</th>
+                {% endif %}
+                <th class="text-end">Amount</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tx in transactions %}
+            <tr>
+                <td data-label="Date">{{ tx.transaction_date.strftime('%d %b %Y') }}</td>
+                <td data-label="Company">
+                    {% if tx.company %}
+                    <a href="{{ url_for('companies.detail_company', id=tx.company_id) }}" class="text-decoration-none">
+                        {{ tx.company.company_name }}
+                    </a>
+                    {% else %}
+                    <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+                <td data-label="Type">
+                    {% if tx.type == 'in' %}
+                    <span class="badge bg-success">In</span>
+                    {% else %}
+                    <span class="badge bg-danger">Out</span>
+                    {% if tx.method == 'accounts' %}
+                    <span class="badge bg-secondary">Accounts</span>
+                    {% elif tx.method == 'bank' %}
+                    <span class="badge bg-info text-dark">Bank</span>
+                    {% endif %}
+                    {% endif %}
+                </td>
+                <td data-label="Description">{{ tx.description or '—' }}</td>
+                {% if current_user.has_role_at_least("manager") %}
+                <td data-label="Recorded By">{{ tx.user.display_name }}</td>
+                {% endif %}
+                <td data-label="Amount" class="text-end">
+                    <span class="fw-semibold {% if tx.type == 'in' %}text-success{% else %}text-danger{% endif %}">
+                        &pound;{{ "{:,.2f}".format(tx.amount) }}
+                    </span>
+                </td>
+                <td data-label="Actions" class="text-end">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                            data-bs-toggle="modal" data-bs-target="#confirmActionModal"
+                            data-action-title="Edit Transaction"
+                            data-action-message="You are about to edit this transaction for"
+                            data-action-item="{{ tx.company.company_name if tx.company else 'Cash Out' }}"
+                            data-action-url="{{ url_for('cash.edit_transaction', id=tx.id) }}"
+                            data-action-method="GET"
+                            data-action-btn-class="btn-primary"
+                            data-action-btn-text="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                            data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"
+                            data-item-name="{{ tx.description or 'this transaction' }}"
+                            data-delete-url="{{ url_for('cash.delete_transaction', id=tx.id) }}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="bi bi-wallet2 d-block"></i>
+    <h5>No transactions found</h5>
+    <p>{% if selected_company_id or selected_type or date_from or date_to %}Try adjusting your filters.{% else %}<a href="{{ url_for('cash.create_transaction') }}">Record your first transaction</a> to get started.{% endif %}</p>
+</div>
+{% endif %}
+{% endblock %}

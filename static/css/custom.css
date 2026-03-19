@@ -206,11 +206,20 @@ body.sticky-nav .client-profile-sidebar {
     max-height: calc(100vh - 5.5rem);
 }
 @media (max-width: 991.98px) {
-    .client-profile-sidebar {
+    .client-profile-sidebar,
+    body.sticky-nav .client-profile-sidebar {
         position: static;
         max-height: none;
         overflow-y: visible;
     }
+}
+
+/* Timeline fold toggle */
+.timeline-fold-toggle .bi-chevron-down {
+    transition: transform 0.2s;
+}
+.timeline-fold-toggle[aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
 }
 
 /* Mobile responsive tables — stacked card layout */
@@ -341,6 +350,13 @@ body.sticky-nav .client-profile-sidebar {
 
 .btn-quick-function:hover {
     background-color: #fff3cd;
+}
+
+/* Active navbar highlight — bottom border underline */
+.navbar-dark .nav-link.active,
+.navbar-dark .nav-link.active:focus {
+    border-bottom: 3px solid #fff;
+    padding-bottom: calc(0.5rem - 3px);
 }
 
 /* Deactivated records */

@@ -104,6 +104,7 @@ def create_app(config_class=None):
     from blueprints.data_io import data_io_bp
     from blueprints.google import google_bp
     from blueprints.orders import orders_bp
+    from blueprints.cash import cash_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -117,6 +118,7 @@ def create_app(config_class=None):
     app.register_blueprint(data_io_bp, url_prefix="/settings/data")
     app.register_blueprint(google_bp, url_prefix="/google")
     app.register_blueprint(orders_bp, url_prefix="/accounts")
+    app.register_blueprint(cash_bp, url_prefix="/cash")
 
     # ── Backward-compatible redirects ──────────────────────────
     @app.route("/clients/")
@@ -140,6 +142,7 @@ def create_app(config_class=None):
             Attachment,
             User, ROLES,
             Invoice, INVOICE_STATUSES,
+            CashTransaction,
             GoogleOAuthConfig, GoogleCredential,
             GoogleCalendarSync,
             GoogleDoc, DocTemplate,
@@ -325,6 +328,14 @@ def create_app(config_class=None):
                 db.session.execute(db.text(
                     "ALTER TABLE app_settings ADD COLUMN show_deactivated_to_users BOOLEAN DEFAULT 0"
                 ))
+            if "cash_module_enabled" not in as_columns:
+                db.session.execute(db.text(
+                    "ALTER TABLE app_settings ADD COLUMN cash_module_enabled BOOLEAN DEFAULT 0"
+                ))
+            if "timeline_default_days" not in as_columns:
+                db.session.execute(db.text(
+                    "ALTER TABLE app_settings ADD COLUMN timeline_default_days INTEGER NOT NULL DEFAULT 30"
+                ))
             db.session.commit()
 
         # Create any new tables (contacts, social_accounts, invoices)
@@ -456,6 +467,8 @@ def create_app(config_class=None):
             "google_enabled": g_enabled,
             "google_connected": g_connected,
             "google_email": g_email,
+            "cash_module_enabled": settings.cash_module_enabled,
+            "app_timeline_default_days": settings.timeline_default_days,
         }
 
     return app

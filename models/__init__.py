@@ -16,6 +16,7 @@ from models.app_settings import DEFAULT_COMPANY_COLUMNS  # noqa: F401
 from models.google_oauth_config import GoogleOAuthConfig as GoogleOAuthConfig  # noqa: F401
 from models.google_credential import GoogleCredential as GoogleCredential  # noqa: F401
 from models.google_calendar_sync import GoogleCalendarSync as GoogleCalendarSync  # noqa: F401
+from models.cash_transaction import CashTransaction  # noqa: F401
 from models.google_doc import GoogleDoc as GoogleDoc  # noqa: F401
 from models.doc_template import DocTemplate as DocTemplate  # noqa: F401
 from models.google_drive_file import GoogleDriveFile as GoogleDriveFile  # noqa: F401

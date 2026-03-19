@@ -81,16 +81,30 @@
                 </td>
                 <td class="text-end">
                     {% if current_user.has_role_at_least("manager") %}
-                    <form method="POST" action="{{ url_for('contacts.toggle_active', id=contact.id) }}" class="d-inline">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-sm btn-outline-{% if contact.is_active %}secondary{% else %}success{% endif %}" title="{% if contact.is_active %}Deactivate{% else %}Activate{% endif %}">
-                            <i class="bi bi-{% if contact.is_active %}eye-slash{% else %}eye{% endif %}"></i>
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-sm btn-outline-{% if contact.is_active %}secondary{% else %}success{% endif %}"
+                            data-bs-toggle="modal" data-bs-target="#confirmActionModal"
+                            data-action-title="{% if contact.is_active %}Confirm Deactivation{% else %}Confirm Activation{% endif %}"
+                            data-action-message="Are you sure you want to {% if contact.is_active %}deactivate{% else %}activate{% endif %}"
+                            data-action-item="{{ contact.full_name }}"
+                            data-action-url="{{ url_for('contacts.toggle_active', id=contact.id) }}"
+                            data-action-method="POST"
+                            data-action-btn-class="btn-{% if contact.is_active %}warning{% else %}success{% endif %}"
+                            data-action-btn-text="{% if contact.is_active %}Deactivate{% else %}Activate{% endif %}"
+                            title="{% if contact.is_active %}Deactivate{% else %}Activate{% endif %}">
+                        <i class="bi bi-{% if contact.is_active %}eye-slash{% else %}eye{% endif %}"></i>
+                    </button>
                     {% endif %}
-                    <a href="{{ url_for('contacts.edit_contact', id=contact.id) }}" class="btn btn-sm btn-outline-secondary">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                            data-bs-toggle="modal" data-bs-target="#confirmActionModal"
+                            data-action-title="Edit Contact"
+                            data-action-message="You are about to edit"
+                            data-action-item="{{ contact.full_name }}"
+                            data-action-url="{{ url_for('contacts.edit_contact', id=contact.id) }}"
+                            data-action-method="GET"
+                            data-action-btn-class="btn-primary"
+                            data-action-btn-text="Edit">
                         <i class="bi bi-pencil"></i>
-                    </a>
+                    </button>
                     <button type="button" class="btn btn-sm btn-outline-danger"
                             data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"
                             data-item-name="{{ contact.full_name }}"

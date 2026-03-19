@@ -134,6 +134,31 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    /* Timeline default days selector handler */
+    var timelineDaysSelect = document.getElementById("prefTimelineDays");
+    if (timelineDaysSelect) {
+        timelineDaysSelect.addEventListener("change", function () {
+            fetch("/settings/ui-preferences", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": getCsrfToken()
+                },
+                body: JSON.stringify({ timeline_default_days: parseInt(this.value, 10) })
+            })
+            .then(function (resp) { return resp.json(); })
+            .then(function (data) {
+                if (data.ok) {
+                    window.showToast("Timeline range updated.", "success");
+                }
+            })
+            .catch(function () {
+                window.showToast("Failed to save timeline range.", "danger");
+            });
+        });
+    }
+
     /* Company list column configuration save handler */
     var saveColBtn = document.getElementById("saveColConfig");
     if (saveColBtn) {

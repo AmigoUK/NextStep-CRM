@@ -526,6 +526,12 @@ def update_ui_preferences():
         settings.show_deactivated_to_managers = bool(data["show_deactivated_to_managers"])
     if "show_deactivated_to_users" in data:
         settings.show_deactivated_to_users = bool(data["show_deactivated_to_users"])
+    if "cash_module_enabled" in data:
+        settings.cash_module_enabled = bool(data["cash_module_enabled"])
+    if "timeline_default_days" in data:
+        days = int(data["timeline_default_days"])
+        if days in (7, 14, 30, 60, 90, 180, 365):
+            settings.timeline_default_days = days
     db.session.commit()
     return jsonify({"ok": True})
 

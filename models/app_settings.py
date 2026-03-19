@@ -30,6 +30,8 @@ class AppSettings(db.Model):
     company_list_columns = db.Column(db.Text, default="{}")
     show_deactivated_to_managers = db.Column(db.Boolean, default=True)
     show_deactivated_to_users = db.Column(db.Boolean, default=False)
+    cash_module_enabled = db.Column(db.Boolean, default=False)
+    timeline_default_days = db.Column(db.Integer, nullable=False, default=30)
 
     @property
     def company_columns_config(self):
@@ -55,6 +57,7 @@ class AppSettings(db.Model):
                 pagination_size=25,
                 back_to_top=True,
                 risk_assessment_mode="full",
+                timeline_default_days=30,
             )
             db.session.add(settings)
             db.session.commit()

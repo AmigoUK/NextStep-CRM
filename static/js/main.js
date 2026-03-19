@@ -69,6 +69,52 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    /* Confirm Action modal (deactivate / edit) */
+    var actionModal = document.getElementById("confirmActionModal");
+    if (actionModal) {
+        actionModal.addEventListener("show.bs.modal", function (event) {
+            var btn = event.relatedTarget;
+            var title = btn.getAttribute("data-action-title") || "Confirm";
+            var message = btn.getAttribute("data-action-message") || "Are you sure?";
+            var itemName = btn.getAttribute("data-action-item") || "";
+            var url = btn.getAttribute("data-action-url");
+            var method = (btn.getAttribute("data-action-method") || "POST").toUpperCase();
+            var btnClass = btn.getAttribute("data-action-btn-class") || "btn-primary";
+            var btnText = btn.getAttribute("data-action-btn-text") || "Confirm";
+
+            document.getElementById("confirmActionTitle").textContent = title;
+
+            /* Build message safely using DOM — item name in bold */
+            var msgEl = document.getElementById("confirmActionMessage");
+            while (msgEl.firstChild) msgEl.removeChild(msgEl.firstChild);
+            if (itemName) {
+                msgEl.appendChild(document.createTextNode(message + " "));
+                var strong = document.createElement("strong");
+                strong.textContent = itemName;
+                msgEl.appendChild(strong);
+                msgEl.appendChild(document.createTextNode("?"));
+            } else {
+                msgEl.textContent = message;
+            }
+
+            var confirmBtn = document.getElementById("confirmActionBtn");
+            confirmBtn.className = "btn " + btnClass;
+            confirmBtn.textContent = btnText;
+
+            var form = document.getElementById("confirmActionForm");
+            if (method === "GET") {
+                /* For GET actions (e.g. edit), redirect on click instead of form submit */
+                form.onsubmit = function (e) {
+                    e.preventDefault();
+                    window.location.href = url;
+                };
+            } else {
+                form.onsubmit = null;
+                form.action = url;
+            }
+        });
+    }
+
     /* Auto-show toast notifications */
     var toasts = document.querySelectorAll(".toast");
     toasts.forEach(function (toastEl) {
