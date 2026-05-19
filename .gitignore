@@ -30,3 +30,6 @@ instance/uploads/
 
 # Environment
 .env
+
+# Local TLS dev certs
+certs/*.pem
